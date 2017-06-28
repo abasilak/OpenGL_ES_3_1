@@ -8,7 +8,10 @@ import android.opengl.Matrix;
 
 public class Camera {
 
-    public float   m_world_angle;
+
+    public float[] m_world_translate    = new float[3];
+
+    public float   m_world_rot_angle;
     public float[] m_world_rot_axis     = new float[3];
 
     public float[] m_world_matrix       = new float[16];
@@ -25,7 +28,11 @@ public class Camera {
 
     public Camera ()
     {
-        m_world_angle = 0.0f;
+        m_world_translate[0] = 0.0f;
+        m_world_translate[1] = 0.0f;
+        m_world_translate[2] = 0.0f;
+
+        m_world_rot_angle = 0.0f;
 
         m_world_rot_axis[0] = 0.0f;
         m_world_rot_axis[1] = 0.0f;
@@ -33,7 +40,7 @@ public class Camera {
 
         m_eye[0] =  0.0f;
         m_eye[1] =  0.0f;
-        m_eye[2] = -3.0f;
+        m_eye[2] = -4.0f;
 
         m_target[0] = 0.0f;
         m_target[1] = 0.0f;
@@ -43,14 +50,14 @@ public class Camera {
         m_up[1] = 1.0f;
         m_up[2] = 0.0f;
 
-        m_near_field = 1.0f;
+        m_near_field = 0.1f;
         m_far_field  = 10.0f;
         m_fov        = 45.0f;
     }
 
     void computeWorldMatrix()
     {
-        Matrix.setRotateM(m_world_matrix, 0, m_world_angle, m_world_rot_axis[0], m_world_rot_axis[1], m_world_rot_axis[2]);
+        Matrix.setRotateM(m_world_matrix, 0, m_world_rot_angle, m_world_rot_axis[0], m_world_rot_axis[1], m_world_rot_axis[2]);
     }
 
     void computeViewMatrix()
@@ -61,6 +68,5 @@ public class Camera {
     void computeProjectionMatrix(float aspect_ratio)
     {
         Matrix.perspectiveM(m_projection_matrix, 0, m_fov, aspect_ratio, m_near_field, m_far_field);
-        //Matrix.frustumM(m_projection_matrix, 0, -aspect_ratio, aspect_ratio, -1, 1, 3, 7);
     }
 }

@@ -32,9 +32,11 @@ class MyGLSurfaceView extends GLSurfaceView
     }
 
     // HANDLING EVENTS
-    private final float TOUCH_SCALE_FACTOR = 180.0f / 320;
-    private float mPreviousX;
-    private float mPreviousY;
+    private final float TOUCH_SCALE_FACTOR      = 0.001f;
+    private final float TOUCH_SCALE_FACTOR_ROT  = 0.1f;
+
+    private float   mPreviousX;
+    private float   mPreviousY;
 
     @Override
     public boolean onTouchEvent(MotionEvent e)
@@ -52,17 +54,22 @@ class MyGLSurfaceView extends GLSurfaceView
                 float dx = x - mPreviousX;
                 float dy = y - mPreviousY;
 
-                // reverse direction of rotation above the mid-line
-                if (y > getHeight() / 2) {
-                    dx = dx * -1 ;
+                // One finger detected
+                if (e.getPointerCount() == 1)
+                {
+                    m_renderer.m_camera.m_target[0] += dx * TOUCH_SCALE_FACTOR;
+                    m_renderer.m_camera.m_target[1] += dy * TOUCH_SCALE_FACTOR;
                 }
+                // More than one fingers detected
+                else
+                {
+                    // reverse direction of rotation above the mid-line
+                    if (y > getHeight() / 2) dx *= -1 ;
+                    // reverse direction of rotation to left of the mid-line
+                    if (x < getWidth () / 2) dy *= -1 ;
 
-                // reverse direction of rotation to left of the mid-line
-                if (x < getWidth() / 2) {
-                    dy = dy * -1 ;
+                    m_renderer.m_camera.m_world_rot_angle += ((dx + dy) * TOUCH_SCALE_FACTOR_ROT);
                 }
-
-                m_renderer.m_camera.m_world_angle +=  ((dx + dy) * TOUCH_SCALE_FACTOR);
                 requestRender();
         }
 
