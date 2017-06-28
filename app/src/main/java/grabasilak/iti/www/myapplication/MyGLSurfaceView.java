@@ -32,11 +32,14 @@ class MyGLSurfaceView extends GLSurfaceView
     }
 
     // HANDLING EVENTS
-    private final float TOUCH_SCALE_FACTOR      = 0.001f;
+    private final float TOUCH_SCALE_FACTOR_X    = 0.001f;
+    private final float TOUCH_SCALE_FACTOR_Y    = 0.001f;
+    private final float TOUCH_SCALE_FACTOR_Z    = 0.05f;
     private final float TOUCH_SCALE_FACTOR_ROT  = 0.1f;
 
     private float   mPreviousX;
     private float   mPreviousY;
+    private float   mPreviousZ;
 
     @Override
     public boolean onTouchEvent(MotionEvent e)
@@ -45,24 +48,21 @@ class MyGLSurfaceView extends GLSurfaceView
         // and other input controls. In this case, you are only
         // interested in events where the touch position changed.
 
-        float x = e.getX();
-        float y = e.getY();
+        float x=e.getX(), dx, y=e.getY(), dy, z=1.0f, dz;
 
         switch (e.getAction()) {
-            case MotionEvent.ACTION_MOVE:
 
-                float dx = x - mPreviousX;
-                float dy = y - mPreviousY;
+            case MotionEvent.ACTION_MOVE:
 
                 // One finger detected
                 if (e.getPointerCount() == 1)
                 {
-                    m_renderer.m_camera.m_target[0] += dx * TOUCH_SCALE_FACTOR;
-                    m_renderer.m_camera.m_target[1] += dy * TOUCH_SCALE_FACTOR;
-                }
-                // More than one fingers detected
-                else
-                {
+                    x = e.getX();
+                    y = e.getY();
+
+                    dx = x - mPreviousX;
+                    dy = y - mPreviousY;
+
                     // reverse direction of rotation above the mid-line
                     if (y > getHeight() / 2) dx *= -1 ;
                     // reverse direction of rotation to left of the mid-line
@@ -70,12 +70,45 @@ class MyGLSurfaceView extends GLSurfaceView
 
                     m_renderer.m_camera.m_world_rot_angle += ((dx + dy) * TOUCH_SCALE_FACTOR_ROT);
                 }
+                // Two fingers detected
+                else // if (e.getPointerCount() == 2)
+                {
+                    z  = spacing(e);
+                    dz = z - mPreviousZ;
+                    if(z > 200.0f)
+                    {
+                        if(dz > 0)
+                            m_renderer.m_camera.m_eye[2] += TOUCH_SCALE_FACTOR_Z;
+                        else
+                            m_renderer.m_camera.m_eye[2] -= TOUCH_SCALE_FACTOR_Z;
+                    }
+                    else
+                    {
+                        x = e.getX(0);
+                        y = e.getY(0);
+
+                        dx = x - mPreviousX;
+                        dy = y - mPreviousY;
+
+                        m_renderer.m_camera.m_target[0] += dx * TOUCH_SCALE_FACTOR_X;
+                        m_renderer.m_camera.m_target[1] += dy * TOUCH_SCALE_FACTOR_Y;
+                    }
+                }
                 requestRender();
+                break;
         }
 
         mPreviousX = x;
         mPreviousY = y;
+        mPreviousZ = z;
 
         return true;
+    }
+
+    /** Determine the space between the first two fingers */
+    private float spacing(MotionEvent event) {
+        float x = event.getX(0) - event.getX(1);
+        float y = event.getY(0) - event.getY(1);
+        return (float) Math.sqrt(x * x + y * y);
     }
 }

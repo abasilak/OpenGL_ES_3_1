@@ -46,9 +46,11 @@ public class Mesh {
 
     private final int []        m_vao           = new int[1];
     private final int []        m_vertices_vbo  = new int[1];
+    private final int []        m_normals_vbo   = new int[1];
     private final int []        m_indices_vbo   = new int[1];
 
-    private final FloatBuffer   m_vertex_buffer;
+    private final FloatBuffer   m_vertices_buffer;
+    private final FloatBuffer   m_normals_buffer;
     private final ShortBuffer   m_indices_buffer;
 
     private final float m_vertices_data[] = {
@@ -56,6 +58,12 @@ public class Mesh {
             -0.2f, -0.2f, 0.0f,   // bottom left
             0.2f, -0.2f, 0.0f,   // bottom right
             0.2f,  0.2f, 0.0f }; // top right
+
+    private final float m_normals_data[] = {
+            0.0f, 1.0f, 0.0f,   // top left
+            0.0f, 1.0f, 0.0f,   // bottom left
+            0.0f, 1.0f, 0.0f,   // bottom right
+            0.0f, 1.0f, 0.0f }; // top right
 
     private final short m_indices_data[] = {
             0, 1, 2, 0, 2, 3 }; // order to draw vertices
@@ -67,10 +75,15 @@ public class Mesh {
      */
     public Mesh() {
 
-        // initialize vertex byte buffer for shape coordinates
-        m_vertex_buffer = ByteBuffer.allocateDirect ( m_vertices_data.length * 4 ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
-        m_vertex_buffer.put (m_vertices_data);
-        m_vertex_buffer.position ( 0 );
+        // initialize vertices byte buffer for shape coordinates
+        m_vertices_buffer = ByteBuffer.allocateDirect ( m_vertices_data.length * 4 ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
+        m_vertices_buffer.put (m_vertices_data);
+        m_vertices_buffer.position ( 0 );
+
+        // initialize normals byte buffer for shape coordinates
+        m_normals_buffer = ByteBuffer.allocateDirect ( m_normals_data.length * 4 ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
+        m_normals_buffer.put (m_normals_data);
+        m_normals_buffer.position ( 0 );
 
         // initialize indices byte buffer for shape coordinates
         m_indices_buffer = ByteBuffer.allocateDirect ( m_indices_data.length * 2 ).order ( ByteOrder.nativeOrder() ).asShortBuffer();
@@ -79,10 +92,15 @@ public class Mesh {
 
         // Generate VBO Ids and load the VBOs with data
         glGenBuffers ( 1, m_vertices_vbo, 0 );
-
         glBindBuffer ( GL_ARRAY_BUFFER, m_vertices_vbo[0] );
-        m_vertex_buffer.position ( 0 );
-        glBufferData( GL_ARRAY_BUFFER, m_vertices_data.length * 4, m_vertex_buffer, GL_STATIC_DRAW );
+        m_vertices_buffer.position ( 0 );
+        glBufferData( GL_ARRAY_BUFFER, m_vertices_data.length * 4, m_vertices_buffer, GL_STATIC_DRAW );
+        glBindBuffer ( GL_ARRAY_BUFFER, 0 );
+
+        glGenBuffers ( 1, m_normals_vbo, 0 );
+        glBindBuffer ( GL_ARRAY_BUFFER, m_normals_vbo[0] );
+        m_normals_buffer.position ( 0 );
+        glBufferData( GL_ARRAY_BUFFER,m_normals_data.length * 4, m_normals_buffer, GL_STATIC_DRAW );
         glBindBuffer ( GL_ARRAY_BUFFER, 0 );
 
         glGenBuffers ( 1, m_indices_vbo, 0 );
@@ -100,6 +118,10 @@ public class Mesh {
         glBindBuffer ( GL_ARRAY_BUFFER          , m_vertices_vbo[0] );
         glEnableVertexAttribArray ( 0 );
         glVertexAttribPointer ( 0, 3, GL_FLOAT, false, 4 * 3, 0 );
+
+        glBindBuffer ( GL_ARRAY_BUFFER          , m_normals_vbo[0] );
+        glEnableVertexAttribArray ( 1 );
+        glVertexAttribPointer ( 1, 3, GL_FLOAT, false, 4 * 3, 0 );
 
         glBindBuffer ( GL_ELEMENT_ARRAY_BUFFER  , m_indices_vbo[0] );
 
