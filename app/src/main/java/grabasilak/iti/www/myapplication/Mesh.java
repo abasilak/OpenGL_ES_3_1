@@ -15,34 +15,43 @@
  */
 package grabasilak.iti.www.myapplication;
 
+import android.content.Context;
+import android.renderscript.Float3;
+import android.util.Log;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
+import java.util.ArrayList;
 
+import static android.opengl.GLES30.glDrawRangeElements;
 import static android.opengl.GLES31.GL_ARRAY_BUFFER;
 import static android.opengl.GLES31.GL_ELEMENT_ARRAY_BUFFER;
 import static android.opengl.GLES31.GL_FLOAT;
 import static android.opengl.GLES31.GL_STATIC_DRAW;
+import static android.opengl.GLES31.GL_TRIANGLES;
+import static android.opengl.GLES31.GL_UNSIGNED_SHORT;
 import static android.opengl.GLES31.glBindBuffer;
+import static android.opengl.GLES31.glBindVertexArray;
 import static android.opengl.GLES31.glBufferData;
 import static android.opengl.GLES31.glEnableVertexAttribArray;
 import static android.opengl.GLES31.glGenBuffers;
-import static android.opengl.GLES31.glVertexAttribPointer;
-import static android.opengl.GLES31.glBindVertexArray;
 import static android.opengl.GLES31.glGenVertexArrays;
-import static android.opengl.GLES31.GL_TRIANGLES;
-import static android.opengl.GLES31.GL_UNSIGNED_SHORT;
-import static android.opengl.GLES31.glDrawElements;
 import static android.opengl.GLES31.glGetUniformLocation;
 import static android.opengl.GLES31.glUniform4fv;
 import static android.opengl.GLES31.glUniformMatrix4fv;
 import static android.opengl.GLES31.glUseProgram;
+import static android.opengl.GLES31.glVertexAttribPointer;
 
 /**
  * A two-dimensional square for use as a drawn object in OpenGL ES 3.1.
  */
-public class Mesh {
+class Mesh {
 
     private final int []        m_vao           = new int[1];
     private final int []        m_vertices_vbo  = new int[1];
@@ -52,6 +61,21 @@ public class Mesh {
     private final FloatBuffer   m_vertices_buffer;
     private final FloatBuffer   m_normals_buffer;
     private final ShortBuffer   m_indices_buffer;
+    //private final FloatBuffer   m_textures_buffer;
+
+    private int m_vertices_count;
+
+    private ArrayList<Float3> vertices;
+    private ArrayList<Float3> vertexTexture;
+    private ArrayList<Float3> vertexNormal;
+    private ArrayList<Face3D> faces;
+    //private ArrayList<GroupObject> groupObjects;
+
+    private String  m_name;
+
+    private float[] tempV;
+    private float[] tempVt;
+    private float[] tempVn;
 
     private final float m_vertices_data[] = {
             -0.2f,  0.2f, 0.0f,   // top left
@@ -73,20 +97,60 @@ public class Mesh {
     /**
      * Sets up the drawing object data for use in an OpenGL ES context.
      */
-    public Mesh() {
+    public void Model(Context context, String name)
+    {
+        vertices        = new ArrayList<>();
+        vertexTexture   = new ArrayList<>();
+        vertexNormal    = new ArrayList<>();
+        faces           = new ArrayList<>();
+
+        //groupObjects    = new ArrayList<GroupObject>();
+
+        m_name          = name;
+
+        readMesh(context, name);
+    }
+
+    private boolean readMesh(Context context, String name) {
+
+        if ( name == null )
+            return false;
+
+        InputStream     is;
+        BufferedReader  in;
+
+        try {
+            is = context.getAssets().open ( "Models/" + name );
+            in = new BufferedReader(new InputStreamReader(is));
+
+           // loadOBJ();
+
+            in.close();
+
+            Log.d("LOADING FILE", "FILE LOADED SUCCESSFULLY !");
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+
+        return true;
+    }
+
+    Mesh() {
 
         // initialize vertices byte buffer for shape coordinates
-        m_vertices_buffer = ByteBuffer.allocateDirect ( m_vertices_data.length * 4 ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
+        m_vertices_buffer = ByteBuffer.allocateDirect ( m_vertices_data.length * Float.BYTES ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
         m_vertices_buffer.put (m_vertices_data);
         m_vertices_buffer.position ( 0 );
 
         // initialize normals byte buffer for shape coordinates
-        m_normals_buffer = ByteBuffer.allocateDirect ( m_normals_data.length * 4 ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
+        m_normals_buffer = ByteBuffer.allocateDirect ( m_normals_data.length * Float.BYTES ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
         m_normals_buffer.put (m_normals_data);
         m_normals_buffer.position ( 0 );
 
         // initialize indices byte buffer for shape coordinates
-        m_indices_buffer = ByteBuffer.allocateDirect ( m_indices_data.length * 2 ).order ( ByteOrder.nativeOrder() ).asShortBuffer();
+        m_indices_buffer = ByteBuffer.allocateDirect ( m_indices_data.length * Short.BYTES ).order ( ByteOrder.nativeOrder() ).asShortBuffer();
         m_indices_buffer.put (m_indices_data);
         m_indices_buffer.position ( 0 );
 
@@ -135,7 +199,7 @@ public class Mesh {
      * @param mvp_matrix - The Model View Project matrix in which to draw
      * this shape.
      */
-    public void draw(int program, float[] mvp_matrix)
+    void draw(int program, float[] mvp_matrix)
     {
         // Add program to OpenGL environment
         glUseProgram(program);
@@ -150,7 +214,8 @@ public class Mesh {
             // 3. DRAW
             glBindVertexArray ( m_vao[0] );
             {
-                glDrawElements(GL_TRIANGLES, m_indices_data.length, GL_UNSIGNED_SHORT, 0);
+                //glDrawElements(GL_TRIANGLES, m_indices_data.length, GL_UNSIGNED_SHORT, 0);
+                glDrawRangeElements(GL_TRIANGLES, 0, m_indices_data.length, m_indices_data.length, GL_UNSIGNED_SHORT, 0);
             }
             glBindVertexArray ( 0 );
         }

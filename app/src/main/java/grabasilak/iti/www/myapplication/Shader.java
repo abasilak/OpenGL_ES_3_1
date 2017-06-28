@@ -43,7 +43,7 @@ import static android.opengl.GLES31.glShaderSource;
 /**
  * A two-dimensional square for use as a drawn object in OpenGL ES 3.1.
  */
-public class Shader {
+class Shader {
 
     private final String    m_name;
     private int             m_program;
@@ -51,17 +51,14 @@ public class Shader {
     /**
      * Sets up the drawing object data for use in an OpenGL ES context.
      */
-    public Shader(Context context, String name) {
+    Shader(Context context, String name) {
 
         m_name = name;
         loadProgram(context);
     }
 
-    public int getProgram(){return m_program;}
-
     /**
      *
-     * @brief Read a shader source into a String
      * @param context Application context
      * @param fileName Name of shader file
      * @return A String object containing shader source, otherwise null
@@ -72,11 +69,11 @@ public class Shader {
 
         if ( fileName == null )
         {
-            return shaderSource;
+            return null;
         }
 
         // Read the shader file from assets
-        InputStream is = null;
+        InputStream is;
         byte [] buffer;
 
         try
@@ -87,7 +84,7 @@ public class Shader {
             buffer = new byte[is.available()];
 
             // Read the text file as a stream, into the buffer
-            is.read ( buffer );
+            int k = is.read ( buffer );
 
             ByteArrayOutputStream os = new ByteArrayOutputStream();
 
@@ -100,20 +97,15 @@ public class Shader {
 
             shaderSource = os.toString();
         }
-        catch ( IOException ioe )
+        catch ( IOException e)
         {
-            is = null;
-        }
-
-        if ( is == null )
-        {
-            return shaderSource;
+            e.printStackTrace();
         }
 
         return shaderSource;
     }
 
-    public int loadProgram(Context context) {
+    private int loadProgram(Context context) {
 
         // Read vertex shader from assets
         String vertShaderSrc = readShader (context, m_name + ".vert" );
@@ -174,7 +166,7 @@ public class Shader {
      * @param shaderCode - String containing the shader code.
      * @return - Returns an id for the shader.
      */
-    public int loadShader(int type, String shaderCode){
+    private int loadShader(int type, String shaderCode){
 
         // read shader...
         final int[] compileStatus = new int[1];
@@ -202,4 +194,6 @@ public class Shader {
 
         return shader;
     }
+
+    int getProgram(){return m_program;}
 }
