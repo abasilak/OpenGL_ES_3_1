@@ -17,9 +17,9 @@ import static android.opengl.GLES31.glClearDepthf;
 import static android.opengl.GLES31.glDepthFunc;
 import static android.opengl.GLES31.glEnable;
 
-public class MyGLRenderer implements GLSurfaceView.Renderer {
+class MyGLRenderer implements GLSurfaceView.Renderer {
 
-    public  Camera        m_camera;
+            Camera        m_camera;
     private Context       m_context;
     private Mesh          m_mesh;
     private Shader        m_shader_rendering;
@@ -28,7 +28,7 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 
     private RenderingSettings m_rendering_settings;
 
-    public MyGLRenderer(Context context)
+    MyGLRenderer(Context context)
     {
         m_context = context;
     }
@@ -42,7 +42,7 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
         m_camera	= new Camera();
 
         // Load Models
-        m_mesh      = new Mesh();
+        m_mesh      = new Mesh(m_context, "Cube3D.obj");
 
         // Load Shaders
         m_shader_rendering = new Shader(m_context, "simple_rendering");

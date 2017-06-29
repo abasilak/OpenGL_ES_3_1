@@ -2,31 +2,26 @@ package grabasilak.iti.www.myapplication;
 
 import android.opengl.Matrix;
 
-/**
- * Created by Andreas on 27-Jun-17.
- */
+class Camera {
 
-public class Camera {
+    private float[] m_world_translate    = new float[3];
 
+    float   m_world_rot_angle;
+    private float[] m_world_rot_axis     = new float[3];
 
-    public float[] m_world_translate    = new float[3];
+    float[] m_world_matrix       = new float[16];
+    float[] m_view_matrix        = new float[16];
+    float[] m_projection_matrix  = new float[16];
 
-    public float   m_world_rot_angle;
-    public float[] m_world_rot_axis     = new float[3];
+    float[] m_eye        = new float[3];
+    float[] m_target     = new float[3];
+    private float[] m_up         = new float[3];
 
-    public float[] m_world_matrix       = new float[16];
-    public float[] m_view_matrix        = new float[16];
-    public float[] m_projection_matrix  = new float[16];
+    private float   m_near_field;
+    private float   m_far_field;
+    private float   m_fov;
 
-    public float[] m_eye        = new float[3];
-    public float[] m_target     = new float[3];
-    public float[] m_up         = new float[3];
-
-    public float   m_near_field;
-    public float   m_far_field;
-    public float   m_fov;
-
-    public Camera ()
+    Camera ()
     {
         m_world_translate[0] = 0.0f;
         m_world_translate[1] = 0.0f;
@@ -35,8 +30,8 @@ public class Camera {
         m_world_rot_angle = 0.0f;
 
         m_world_rot_axis[0] = 0.0f;
-        m_world_rot_axis[1] = 0.0f;
-        m_world_rot_axis[2] = 1.0f;
+        m_world_rot_axis[1] = 1.0f;
+        m_world_rot_axis[2] = 0.0f;
 
         m_eye[0] =  0.0f;
         m_eye[1] =  0.0f;

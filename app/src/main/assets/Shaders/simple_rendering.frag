@@ -2,11 +2,11 @@
 
 precision mediump float;
 
-uniform vec4 diffuse_color;
+uniform vec4 uniform_diffuse_color;
 
-out vec4 frag_color;
+out vec4 out_frag_color;
 
 void main()
 {
-    frag_color = diffuse_color;
+    out_frag_color = uniform_diffuse_color;
 }

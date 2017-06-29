@@ -4,13 +4,14 @@ import java.util.ArrayList;
 
 class Face3D {
 
-    private ArrayList<Integer> vertices;
-    private ArrayList<Integer> textures;
-    private ArrayList<Integer> normals;
+    ArrayList<Integer> vertices;
+    ArrayList<Integer> textures;
+    ArrayList<Integer> normals;
 
     Face3D()
     {
-
-
+        vertices = new ArrayList<>();
+        textures = new ArrayList<>();
+        normals  = new ArrayList<>();
     }
 }
