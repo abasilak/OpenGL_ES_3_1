@@ -1,23 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+
+<RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-    android:orientation="vertical"
-    android:weightSum="1"
     android:id="@+id/game_layout"
-    >
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="grabasilak.iti.www.myapplication.MainActivity">
 
-    <TextView
-        android:id="@+id/fps_text"
-        android:background="#FFF000"
+    <grabasilak.iti.www.myapplication.MyGLSurfaceView
+        android:id="@+id/my_opengl_es_view"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="0.1"
-        android:text="@string/test_string"
-        android:textColor="#000000"
-        android:textAppearance="?android:textAppearanceLarge"
-                 />
-</LinearLayout>
+        android:layout_height="match_parent" />
+
+    <android.support.design.widget.CoordinatorLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <android.support.design.widget.FloatingActionButton xmlns:app="http://schemas.android.com/apk/res-auto"
+            android:id="@+id/fab"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_margin="@dimen/fab_margin"
+            app:backgroundTint="@color/colorPrimary"
+            app:elevation="8dp"
+            app:srcCompat="@android:drawable/ic_menu_report_image"
+            tools:layout_editor_absoluteX="0dp"
+            tools:layout_editor_absoluteY="0dp" />
+    </android.support.design.widget.CoordinatorLayout>
+
+</RelativeLayout>
+
+

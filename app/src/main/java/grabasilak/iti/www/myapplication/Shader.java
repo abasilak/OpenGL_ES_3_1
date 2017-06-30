@@ -22,23 +22,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import static android.opengl.GLES31.GL_COMPILE_STATUS;
-import static android.opengl.GLES31.GL_FRAGMENT_SHADER;
-import static android.opengl.GLES31.GL_LINK_STATUS;
-import static android.opengl.GLES31.GL_VERTEX_SHADER;
-import static android.opengl.GLES31.glAttachShader;
-import static android.opengl.GLES31.glCompileShader;
-import static android.opengl.GLES31.glCreateProgram;
-import static android.opengl.GLES31.glCreateShader;
-import static android.opengl.GLES31.glDeleteProgram;
-import static android.opengl.GLES31.glDeleteShader;
-import static android.opengl.GLES31.glDetachShader;
-import static android.opengl.GLES31.glGetProgramInfoLog;
-import static android.opengl.GLES31.glGetProgramiv;
-import static android.opengl.GLES31.glGetShaderInfoLog;
-import static android.opengl.GLES31.glGetShaderiv;
-import static android.opengl.GLES31.glLinkProgram;
-import static android.opengl.GLES31.glShaderSource;
+import static android.opengl.GLES31.*;
 
 /**
  * A two-dimensional square for use as a drawn object in OpenGL ES 3.1.

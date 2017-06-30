@@ -1,7 +1,10 @@
 package grabasilak.iti.www.myapplication;
 
+
 import android.app.Activity;
 import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 
 public class MainActivity extends Activity {
 
@@ -11,20 +14,26 @@ public class MainActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Create a GLSurfaceView instance and set it
-        // as the ContentView for this Activity.
-        myGLSurfaceView = new MyGLSurfaceView(this);
-        setContentView(myGLSurfaceView);
+        // Create a GLSurfaceView instance and set it as the ContentView for this Activity.
+        //myGLSurfaceView = new MyGLSurfaceView(this);
+        //myGLSurfaceView.init(this);
+        //setContentView(myGLSurfaceView);
 
         // Set our view.
-        //setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_main);
 
-        // Retrieve our ConstraintLayout layout from our main layout we just set to our view.
-        //LinearLayout my_layout = (LinearLayout) findViewById(R.id.game_layout);
+        myGLSurfaceView = (MyGLSurfaceView) findViewById(R.id.my_opengl_es_view);
+        myGLSurfaceView.init(this);
 
-        // Attach our surfaceview to our relative layout from our main layout.
-        //LinearLayout.LayoutParams glParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 0.9f);
-        //my_layout.addView(myGLSurfaceView, glParams);
+        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        fab.setOnClickListener(view -> {
+            //myGLSurfaceView.addMesh(getString(R.string.MESH_NAME)); // NOT WORKING
+
+            Snackbar.make(view, "'" + getString(R.string.MESH_NAME) + "' Added", Snackbar.LENGTH_SHORT).setAction("Action", null).show();
+
+            // Hide FAB
+            fab.hide();
+        });
     }
 
     @Override

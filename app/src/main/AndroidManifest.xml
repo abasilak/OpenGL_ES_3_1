@@ -7,10 +7,11 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/APP_TITLE"
         android:supportsRtl="true"
-        android:theme="@android:style/Theme.NoTitleBar"
+        android:theme="@style/AppTheme">
         >
     <activity
         android:name=".MainActivity"
+        android:theme="@style/AppTheme.NoActionBar">
         android:label="@string/APP_TITLE"
         >
         <intent-filter>

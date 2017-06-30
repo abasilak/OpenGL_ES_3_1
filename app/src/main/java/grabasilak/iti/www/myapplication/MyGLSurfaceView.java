@@ -2,6 +2,7 @@ package grabasilak.iti.www.myapplication;
 
 import android.content.Context;
 import android.opengl.GLSurfaceView;
+import android.util.AttributeSet;
 import android.view.MotionEvent;
 
 /**
@@ -11,12 +12,21 @@ import android.view.MotionEvent;
  */
 class MyGLSurfaceView extends GLSurfaceView
 {
-    private final MyGLRenderer m_renderer;
+    private final  int   m_renderer_mode = GLSurfaceView.RENDERMODE_CONTINUOUSLY; //or use 'RENDERMODE_WHEN_DIRTY'
+    private MyGLRenderer m_renderer;
 
     public MyGLSurfaceView(Context context)
     {
         super(context);
+    }
 
+    public MyGLSurfaceView(Context context, AttributeSet attrs)
+    {
+        super(context, attrs);
+    }
+
+    public void init(Context context)
+    {
         // Create an OpenGL ES 3.0 context
         setEGLContextClientVersion(3);
 
@@ -25,10 +35,8 @@ class MyGLSurfaceView extends GLSurfaceView
         // Set the Renderer for drawing on the GLSurfaceView
         setRenderer(m_renderer);
 
-        // Render the view only when there is a change in the drawing data
-        setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
-        // Render the view always
-        setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
+        // Render the view
+        setRenderMode(m_renderer_mode);
     }
 
     // HANDLING EVENTS
@@ -69,6 +77,7 @@ class MyGLSurfaceView extends GLSurfaceView
                     if (x < getWidth () / 2) dy *= -1 ;
 
                     m_renderer.m_camera.m_world_rot_angle += ((dx + dy) * TOUCH_SCALE_FACTOR_ROT);
+                 //   m_renderer.m_camera.m_world_rot_axis   = (dy > dx) ? new Float3(0.0f,0.0f,1.0f) : new Float3(0.0f,1.0f,0.0f);
                 }
                 // Two fingers detected
                 else // if (e.getPointerCount() == 2)
@@ -106,9 +115,16 @@ class MyGLSurfaceView extends GLSurfaceView
     }
 
     /** Determine the space between the first two fingers */
-    private float spacing(MotionEvent event) {
-        float x = event.getX(0) - event.getX(1);
-        float y = event.getY(0) - event.getY(1);
-        return (float) Math.sqrt(x * x + y * y);
+    private float spacing(MotionEvent event)
+    {
+        float dx = event.getX(0) - event.getX(1);
+        float dy = event.getY(0) - event.getY(1);
+
+        return (float) Math.sqrt(dx * dx + dy * dy);
+    }
+
+    void addMesh(String fileName)
+    {
+        m_renderer.addMesh(fileName);
     }
 }

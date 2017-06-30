@@ -29,24 +29,24 @@ import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 import java.util.ArrayList;
 
-import static android.opengl.GLES31.GL_FLOAT;
-import static android.opengl.GLES31.GL_STATIC_DRAW;
-import static android.opengl.GLES31.glBufferData;
-import static android.opengl.GLES31.glEnableVertexAttribArray;
-import static android.opengl.GLES31.glGenBuffers;
-import static android.opengl.GLES31.glVertexAttribPointer;
-import static android.opengl.GLES31.glGenVertexArrays;
 import static android.opengl.GLES31.GL_ARRAY_BUFFER;
 import static android.opengl.GLES31.GL_ELEMENT_ARRAY_BUFFER;
+import static android.opengl.GLES31.GL_FLOAT;
+import static android.opengl.GLES31.GL_STATIC_DRAW;
 import static android.opengl.GLES31.GL_TRIANGLES;
 import static android.opengl.GLES31.GL_UNSIGNED_SHORT;
 import static android.opengl.GLES31.glBindBuffer;
 import static android.opengl.GLES31.glBindVertexArray;
+import static android.opengl.GLES31.glBufferData;
 import static android.opengl.GLES31.glDrawRangeElements;
+import static android.opengl.GLES31.glEnableVertexAttribArray;
+import static android.opengl.GLES31.glGenBuffers;
+import static android.opengl.GLES31.glGenVertexArrays;
 import static android.opengl.GLES31.glGetUniformLocation;
 import static android.opengl.GLES31.glUniform4fv;
 import static android.opengl.GLES31.glUniformMatrix4fv;
 import static android.opengl.GLES31.glUseProgram;
+import static android.opengl.GLES31.glVertexAttribPointer;
 
 class Mesh {
 
@@ -57,34 +57,33 @@ class Mesh {
     // Vertex Buffer Objects
     private final int []  m_vertices_vbo    = new int[1];
     private final int []  m_normals_vbo     = new int[1];
-    private final int []  m_texture_uvs_vbo = new int[1];
+    private final int []  m_uvs_vbo         = new int[1];
     private final int []  m_indices_vbo     = new int[1];
 
     // Buffers
     private FloatBuffer   m_vertices_buffer;
     private FloatBuffer   m_normals_buffer;
-    private FloatBuffer   m_texture_uvs_buffer;
+    private FloatBuffer   m_uvs_buffer;
     private ShortBuffer   m_indices_buffer;
 
     private ArrayList<Float3> m_vertices;
     private ArrayList<Float3> m_normals;
-    private ArrayList<Float3> m_texture_uvs;
+    private ArrayList<Float3> m_uvs;
     private ArrayList<Face3D> m_faces;
 
     private float m_vertices_data[];
     private float m_normals_data[];
-    private float m_textures_data[];
+    private float m_uvs_data[];
     private short m_indices_data[];
 
-    private final float m_diffuse_color[] = { 0.2f, 0.709803922f, 0.898039216f, 1.0f };
+    float m_diffuse_color[] = { 0.2f, 0.709803922f, 0.898039216f, 1.0f };
 
     Mesh(Context context, String name)
     {
         m_vertices      = new ArrayList<>();
         m_normals       = new ArrayList<>();
-        m_texture_uvs   = new ArrayList<>();
+        m_uvs           = new ArrayList<>();
         m_faces         = new ArrayList<>();
-
         m_name          = name;
 
         readMesh(context, name);
@@ -106,7 +105,7 @@ class Mesh {
             // Set color for drawing the triangle
             glUniform4fv(glGetUniformLocation(program, "uniform_diffuse_color"), 1, m_diffuse_color, 0);
             // Apply the projection and view transformation
-            glUniformMatrix4fv(glGetUniformLocation(program, "uMVPMatrix"), 1, false, mvp_matrix, 0);
+            glUniformMatrix4fv(glGetUniformLocation(program, "uniform_mvp"), 1, false, mvp_matrix, 0);
 
             // 3. DRAW
             glBindVertexArray ( m_vao[0] );
@@ -117,77 +116,6 @@ class Mesh {
             glBindVertexArray ( 0 );
         }
         glUseProgram(0);
-    }
-
-    private void createBuffers()
-    {
-        // initialize m_vertices byte buffer for shape coordinates
-        m_vertices_buffer = ByteBuffer.allocateDirect ( m_vertices_data.length * Float.BYTES ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
-        m_vertices_buffer.put (m_vertices_data);
-        m_vertices_buffer.position ( 0 );
-
-        // initialize normals byte buffer for shape coordinates
-        if(!m_normals.isEmpty())
-        {
-            m_normals_buffer = ByteBuffer.allocateDirect(m_normals_data.length * Float.BYTES).order(ByteOrder.nativeOrder()).asFloatBuffer();
-            m_normals_buffer.put(m_normals_data);
-            m_normals_buffer.position(0);
-        }
-
-        // initialize indices byte buffer for shape coordinates
-        m_indices_buffer = ByteBuffer.allocateDirect ( m_indices_data.length * Short.BYTES ).order ( ByteOrder.nativeOrder() ).asShortBuffer();
-        m_indices_buffer.put (m_indices_data);
-        m_indices_buffer.position ( 0 );
-    }
-
-    private void createVBOs()
-    {
-        // Generate VBO Ids and load the VBOs with data
-        glGenBuffers ( 1, m_vertices_vbo, 0 );
-        glBindBuffer ( GL_ARRAY_BUFFER, m_vertices_vbo[0] );
-        m_vertices_buffer.position ( 0 );
-        glBufferData( GL_ARRAY_BUFFER, m_vertices_data.length * 4, m_vertices_buffer, GL_STATIC_DRAW );
-        glBindBuffer ( GL_ARRAY_BUFFER, 0 );
-
-        if(!m_normals.isEmpty())
-        {
-            glGenBuffers(1, m_normals_vbo, 0);
-            glBindBuffer(GL_ARRAY_BUFFER, m_normals_vbo[0]);
-            m_normals_buffer.position(0);
-            glBufferData(GL_ARRAY_BUFFER, m_normals_data.length * 4, m_normals_buffer, GL_STATIC_DRAW);
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
-        }
-
-        glGenBuffers ( 1, m_indices_vbo, 0 );
-        glBindBuffer ( GL_ELEMENT_ARRAY_BUFFER, m_indices_vbo[0] );
-        m_indices_buffer.position ( 0 );
-        glBufferData ( GL_ELEMENT_ARRAY_BUFFER, 2 * m_indices_data.length, m_indices_buffer, GL_STATIC_DRAW );
-        glBindBuffer ( GL_ELEMENT_ARRAY_BUFFER, 0 );
-    }
-
-    private void createVAO()
-    {
-        // Generate VAO Id
-        glGenVertexArrays ( 1, m_vao, 0 );
-
-        // Bind the VAO and then setup the vertex attributes
-        glBindVertexArray ( m_vao[0] );
-
-        glBindBuffer ( GL_ARRAY_BUFFER, m_vertices_vbo[0] );
-        glEnableVertexAttribArray ( 0 );
-        glVertexAttribPointer ( 0, 3, GL_FLOAT, false, 4 * 3, 0 );
-
-        if(!m_normals.isEmpty())
-        {
-            glBindBuffer(GL_ARRAY_BUFFER, m_normals_vbo[0]);
-            glEnableVertexAttribArray(1);
-            glVertexAttribPointer(1, 3, GL_FLOAT, false, 4 * 3, 0);
-        }
-
-        glBindBuffer ( GL_ELEMENT_ARRAY_BUFFER  , m_indices_vbo[0] );
-
-        // Reset to the default VAO
-        glBindVertexArray ( 0 );
     }
 
     private boolean readMesh(Context context, String name) {
@@ -246,7 +174,7 @@ class Mesh {
             else if(CommandBlock.equals("vt"))
             {
                 Float3 vertexTex = new Float3(Float.parseFloat(Blocks[1]), Float.parseFloat(Blocks[2]), 0.0f);
-                m_texture_uvs.add(vertexTex);
+                m_uvs.add(vertexTex);
                // Log.d("TEXTURE DATA", " " + vertexTex.x + ", " + vertexTex.y + ", " + vertexTex.z);
             }
             else if(CommandBlock.equals("vn"))
@@ -279,7 +207,7 @@ class Mesh {
                     }
                     else if(faceParams.length == 3)
                     {
-                        if(!m_texture_uvs.isEmpty())
+                        if(!m_uvs.isEmpty())
                             face.textures.add(Integer.parseInt(faceParams[1]) - 1);
                         if(!m_normals.isEmpty())
                             face.normals.add(Integer.parseInt(faceParams[2]) - 1);
@@ -308,9 +236,16 @@ class Mesh {
 
             if(!m_normals.isEmpty())
             {
-                m_normals_data[i * 3] = m_normals.get(i).x;
+                m_normals_data[i * 3    ] = m_normals.get(i).x;
                 m_normals_data[i * 3 + 1] = m_normals.get(i).y;
                 m_normals_data[i * 3 + 2] = m_normals.get(i).z;
+            }
+
+            if(!m_uvs.isEmpty())
+            {
+                m_uvs_data[i * 3    ] = m_uvs.get(i).x;
+                m_uvs_data[i * 3 + 1] = m_uvs.get(i).y;
+                m_uvs_data[i * 3 + 2] = m_uvs.get(i).z;
             }
         }
 
@@ -326,5 +261,99 @@ class Mesh {
         createBuffers();
         createVBOs();
         createVAO();
+    }
+
+    private void createBuffers()
+    {
+        // initialize m_vertices byte buffer for shape coordinates
+        m_vertices_buffer = ByteBuffer.allocateDirect ( m_vertices_data.length * Float.BYTES ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
+        m_vertices_buffer.put (m_vertices_data);
+        m_vertices_buffer.position ( 0 );
+
+        // initialize normals byte buffer for shape coordinates
+        if(!m_normals.isEmpty())
+        {
+            m_normals_buffer = ByteBuffer.allocateDirect(m_normals_data.length * Float.BYTES).order(ByteOrder.nativeOrder()).asFloatBuffer();
+            m_normals_buffer.put(m_normals_data);
+            m_normals_buffer.position(0);
+        }
+
+        if(!m_uvs.isEmpty())
+        {
+            m_uvs_buffer = ByteBuffer.allocateDirect(m_uvs_data.length * Float.BYTES).order(ByteOrder.nativeOrder()).asFloatBuffer();
+            m_uvs_buffer.put(m_uvs_data);
+            m_uvs_buffer.position(0);
+        }
+
+        // initialize indices byte buffer for shape coordinates
+        m_indices_buffer = ByteBuffer.allocateDirect ( m_indices_data.length * Short.BYTES ).order ( ByteOrder.nativeOrder() ).asShortBuffer();
+        m_indices_buffer.put (m_indices_data);
+        m_indices_buffer.position ( 0 );
+    }
+
+    private void createVBOs()
+    {
+        // Generate VBO Ids and load the VBOs with data
+        glGenBuffers ( 1, m_vertices_vbo, 0 );
+        glBindBuffer ( GL_ARRAY_BUFFER, m_vertices_vbo[0] );
+        m_vertices_buffer.position ( 0 );
+        glBufferData( GL_ARRAY_BUFFER, m_vertices_data.length * Float.BYTES, m_vertices_buffer, GL_STATIC_DRAW );
+        glBindBuffer ( GL_ARRAY_BUFFER, 0 );
+
+        if(!m_normals.isEmpty())
+        {
+            glGenBuffers(1, m_normals_vbo, 0);
+            glBindBuffer(GL_ARRAY_BUFFER, m_normals_vbo[0]);
+            m_normals_buffer.position(0);
+            glBufferData(GL_ARRAY_BUFFER, m_normals_data.length * Float.BYTES, m_normals_buffer, GL_STATIC_DRAW);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+        }
+
+        if(!m_uvs.isEmpty())
+        {
+            glGenBuffers(1, m_uvs_vbo, 0);
+            glBindBuffer(GL_ARRAY_BUFFER, m_uvs_vbo[0]);
+            m_uvs_buffer.position(0);
+            glBufferData(GL_ARRAY_BUFFER, m_uvs_data.length * Float.BYTES, m_uvs_buffer, GL_STATIC_DRAW);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+        }
+
+        glGenBuffers ( 1, m_indices_vbo, 0 );
+        glBindBuffer ( GL_ELEMENT_ARRAY_BUFFER, m_indices_vbo[0] );
+        m_indices_buffer.position ( 0 );
+        glBufferData ( GL_ELEMENT_ARRAY_BUFFER, m_indices_data.length * Short.BYTES, m_indices_buffer, GL_STATIC_DRAW );
+        glBindBuffer ( GL_ELEMENT_ARRAY_BUFFER, 0 );
+    }
+
+    private void createVAO()
+    {
+        // Generate VAO Id
+        glGenVertexArrays ( 1, m_vao, 0 );
+
+        // Bind the VAO and then setup the vertex attributes
+        glBindVertexArray ( m_vao[0] );
+
+        glBindBuffer ( GL_ARRAY_BUFFER, m_vertices_vbo[0] );
+        glEnableVertexAttribArray ( 0 );
+        glVertexAttribPointer ( 0, 3, GL_FLOAT, false, Float.BYTES * 3, 0 );
+
+        if(!m_normals.isEmpty())
+        {
+            glBindBuffer(GL_ARRAY_BUFFER, m_normals_vbo[0]);
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(1, 3, GL_FLOAT, false, Float.BYTES * 3, 0);
+        }
+
+        if(!m_uvs.isEmpty())
+        {
+            glBindBuffer(GL_ARRAY_BUFFER, m_uvs_vbo[0]);
+            glEnableVertexAttribArray(2);
+            glVertexAttribPointer(2, 2, GL_FLOAT, false, Float.BYTES * 2, 0);
+        }
+
+        glBindBuffer ( GL_ELEMENT_ARRAY_BUFFER  , m_indices_vbo[0] );
+
+        // Reset to the default VAO
+        glBindVertexArray ( 0 );
     }
 }

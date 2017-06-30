@@ -1,20 +1,21 @@
 package grabasilak.iti.www.myapplication;
 
 import android.opengl.Matrix;
+import android.renderscript.Float3;
 
 class Camera {
 
     private float[] m_world_translate    = new float[3];
 
     float   m_world_rot_angle;
-    private float[] m_world_rot_axis     = new float[3];
+    private Float3  m_world_rot_axis;
 
     float[] m_world_matrix       = new float[16];
     float[] m_view_matrix        = new float[16];
     float[] m_projection_matrix  = new float[16];
 
-    float[] m_eye        = new float[3];
-    float[] m_target     = new float[3];
+    float[] m_eye                = new float[3];
+    float[] m_target             = new float[3];
     private float[] m_up         = new float[3];
 
     private float   m_near_field;
@@ -28,10 +29,7 @@ class Camera {
         m_world_translate[2] = 0.0f;
 
         m_world_rot_angle = 0.0f;
-
-        m_world_rot_axis[0] = 0.0f;
-        m_world_rot_axis[1] = 1.0f;
-        m_world_rot_axis[2] = 0.0f;
+        m_world_rot_axis = new Float3(0.0f,1.0f,0.0f);
 
         m_eye[0] =  0.0f;
         m_eye[1] =  0.0f;
@@ -52,7 +50,7 @@ class Camera {
 
     void computeWorldMatrix()
     {
-        Matrix.setRotateM(m_world_matrix, 0, m_world_rot_angle, m_world_rot_axis[0], m_world_rot_axis[1], m_world_rot_axis[2]);
+        Matrix.setRotateM(m_world_matrix, 0, m_world_rot_angle, m_world_rot_axis.x, m_world_rot_axis.y, m_world_rot_axis.z);
     }
 
     void computeViewMatrix()
