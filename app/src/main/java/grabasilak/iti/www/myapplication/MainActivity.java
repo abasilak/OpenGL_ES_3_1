@@ -1,10 +1,10 @@
 package grabasilak.iti.www.myapplication;
 
-
 import android.app.Activity;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.util.Log;
 
 public class MainActivity extends Activity {
 
@@ -27,7 +27,8 @@ public class MainActivity extends Activity {
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(view -> {
-            //myGLSurfaceView.addMesh(getString(R.string.MESH_NAME)); // NOT WORKING
+
+            Log.d("FAB", "MESH ADDED !");
 
             Snackbar.make(view, "'" + getString(R.string.MESH_NAME) + "' Added", Snackbar.LENGTH_SHORT).setAction("Action", null).show();
 

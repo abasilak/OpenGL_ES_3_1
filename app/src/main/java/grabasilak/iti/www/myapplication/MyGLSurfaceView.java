@@ -12,8 +12,8 @@ import android.view.MotionEvent;
  */
 class MyGLSurfaceView extends GLSurfaceView
 {
-    private final  int   m_renderer_mode = GLSurfaceView.RENDERMODE_CONTINUOUSLY; //or use 'RENDERMODE_WHEN_DIRTY'
-    private MyGLRenderer m_renderer;
+    private final  int   m_renderer_mode = GLSurfaceView.RENDERMODE_WHEN_DIRTY; //or use 'RENDERMODE_WHEN_DIRTY'
+    MyGLRenderer m_renderer;
 
     public MyGLSurfaceView(Context context)
     {
@@ -37,14 +37,12 @@ class MyGLSurfaceView extends GLSurfaceView
 
         // Render the view
         setRenderMode(m_renderer_mode);
+
+        // Turn on error-checking and logging
+        setDebugFlags(DEBUG_CHECK_GL_ERROR | DEBUG_LOG_GL_CALLS);
     }
 
     // HANDLING EVENTS
-    private final float TOUCH_SCALE_FACTOR_X    = 0.001f;
-    private final float TOUCH_SCALE_FACTOR_Y    = 0.001f;
-    private final float TOUCH_SCALE_FACTOR_Z    = 0.05f;
-    private final float TOUCH_SCALE_FACTOR_ROT  = 0.1f;
-
     private float   mPreviousX;
     private float   mPreviousY;
     private float   mPreviousZ;
@@ -76,31 +74,36 @@ class MyGLSurfaceView extends GLSurfaceView
                     // reverse direction of rotation to left of the mid-line
                     if (x < getWidth () / 2) dy *= -1 ;
 
+                    final float TOUCH_SCALE_FACTOR_ROT  = 0.1f;
                     m_renderer.m_camera.m_world_rot_angle += ((dx + dy) * TOUCH_SCALE_FACTOR_ROT);
                  //   m_renderer.m_camera.m_world_rot_axis   = (dy > dx) ? new Float3(0.0f,0.0f,1.0f) : new Float3(0.0f,1.0f,0.0f);
                 }
                 // Two fingers detected
                 else // if (e.getPointerCount() == 2)
                 {
-                    z  = spacing(e);
-                    dz = z - mPreviousZ;
-                    if(z > 200.0f)
+                    x = e.getX(0);
+                    y = e.getY(0);
+                    z = spacing(e);
+                    if(z > 300.0f)
                     {
+                        float TOUCH_SCALE_FACTOR_Z = m_renderer.m_aabb.m_radius*0.1f;
+
+                        dz = z - mPreviousZ;
                         if(dz > 0)
-                            m_renderer.m_camera.m_eye[2] += TOUCH_SCALE_FACTOR_Z;
+                            m_renderer.m_camera.m_eye.z += TOUCH_SCALE_FACTOR_Z;
                         else
-                            m_renderer.m_camera.m_eye[2] -= TOUCH_SCALE_FACTOR_Z;
+                            m_renderer.m_camera.m_eye.z -= TOUCH_SCALE_FACTOR_Z;
                     }
                     else
                     {
-                        x = e.getX(0);
-                        y = e.getY(0);
-
                         dx = x - mPreviousX;
                         dy = y - mPreviousY;
 
-                        m_renderer.m_camera.m_target[0] += dx * TOUCH_SCALE_FACTOR_X;
-                        m_renderer.m_camera.m_target[1] += dy * TOUCH_SCALE_FACTOR_Y;
+                        float TOUCH_SCALE_FACTOR_X = m_renderer.m_aabb.m_radius*0.005f;
+                        float TOUCH_SCALE_FACTOR_Y = m_renderer.m_aabb.m_radius*0.005f;
+
+                        m_renderer.m_camera.m_target.x -= dx * TOUCH_SCALE_FACTOR_X;
+                        m_renderer.m_camera.m_target.y += dy * TOUCH_SCALE_FACTOR_Y;
                     }
                 }
                 requestRender();
@@ -121,10 +124,5 @@ class MyGLSurfaceView extends GLSurfaceView
         float dy = event.getY(0) - event.getY(1);
 
         return (float) Math.sqrt(dx * dx + dy * dy);
-    }
-
-    void addMesh(String fileName)
-    {
-        m_renderer.addMesh(fileName);
     }
 }

@@ -1,5 +1,5 @@
 <resources>
     <string name="APP_TITLE">[OpenGL 3.1][Example]</string>
-    <string name="MESH_NAME">Cube3D.obj</string>
-    <string name="SHADING_NAME">simple_rendering</string>
+    <string name="MESH_NAME" translatable="false">glass.obj</string>
+    <string name="SHADING_NAME" translatable="false">simple_rendering</string>
 </resources>
