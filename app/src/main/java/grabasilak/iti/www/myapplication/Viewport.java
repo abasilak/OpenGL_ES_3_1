@@ -8,8 +8,8 @@ import static android.opengl.GLES31.glViewport;
 
 public class Viewport {
 
-    private int	    m_width;
-    private int	    m_height;
+    int	    m_width;
+    int	    m_height;
     private int	    m_left_corner_x;
     private int	    m_left_corner_y;
     private float	m_aspect_ratio;

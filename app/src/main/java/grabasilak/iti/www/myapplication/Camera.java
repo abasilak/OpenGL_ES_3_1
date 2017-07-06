@@ -16,22 +16,23 @@ class Camera {
     Float3 m_target;
     private Float3 m_up;
 
+    float   m_fov;
     private float   m_near_field;
     private float   m_far_field;
-    private float   m_fov;
+
 
     Camera ()
     {
         m_world_rot_angle = 0.0f;
         m_world_rot_axis = new Float3(0.0f,1.0f,0.0f);
 
-        m_eye    = new Float3(60.0f, 100.0f, 170.0f);
+        m_eye    = new Float3(0.0f, 0.0f, -4.0f);
 
         m_target = new Float3(0.0f, 0.0f, 0.0f);
 
         m_up     = new Float3(0.0f, 1.0f, 0.0f);
 
-        m_near_field = 0.1f;
+        m_near_field = 1.0f;
         m_far_field  = 1000.0f;
         m_fov        = 30.0f;
     }

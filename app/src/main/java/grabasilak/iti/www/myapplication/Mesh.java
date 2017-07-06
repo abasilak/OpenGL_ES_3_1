@@ -18,104 +18,82 @@ package grabasilak.iti.www.myapplication;
 import android.content.Context;
 import android.opengl.Matrix;
 import android.renderscript.Float3;
-import android.support.annotation.NonNull;
 import android.util.Log;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 import java.util.ArrayList;
 
-import static android.icu.lang.UCharacter.GraphemeClusterBreak.V;
-import static android.opengl.GLES20.glBufferSubData;
-import static android.opengl.GLES30.GL_UNIFORM_BUFFER;
-import static android.opengl.GLES30.glGetUniformBlockIndex;
-import static android.opengl.GLES30.glUniformBlockBinding;
-import static android.opengl.GLES31.GL_ARRAY_BUFFER;
-import static android.opengl.GLES31.GL_ELEMENT_ARRAY_BUFFER;
-import static android.opengl.GLES31.GL_FLOAT;
-import static android.opengl.GLES31.GL_STATIC_DRAW;
-import static android.opengl.GLES31.GL_TRIANGLES;
-import static android.opengl.GLES31.GL_UNSIGNED_SHORT;
-import static android.opengl.GLES31.glBindBuffer;
-import static android.opengl.GLES31.glBindVertexArray;
-import static android.opengl.GLES31.glBufferData;
-import static android.opengl.GLES31.glDrawRangeElements;
-import static android.opengl.GLES31.glEnableVertexAttribArray;
-import static android.opengl.GLES31.glGenBuffers;
-import static android.opengl.GLES31.glGenVertexArrays;
-import static android.opengl.GLES31.glGetUniformLocation;
-import static android.opengl.GLES31.glUniform4fv;
-import static android.opengl.GLES31.glUniformMatrix4fv;
-import static android.opengl.GLES31.glUseProgram;
-import static android.opengl.GLES31.glVertexAttribPointer;
-import static android.os.Build.VERSION_CODES.M;
-import static android.os.Build.VERSION_CODES.N;
+import static android.opengl.GLES31.*;
+import static grabasilak.iti.www.myapplication.Util.m_sizeofM44;
+import static grabasilak.iti.www.myapplication.Util.m_sizeofV4;
 
 class Mesh {
-
-    private       String  m_name;
+                AABB            m_aabb;
+    private     String          m_name;
 
     // Vertex Array Object
-    private final int []  m_vao             = new int[1];
+    private final int []        m_vao             = new int[1];
     // Vertex Buffer Objects
-    private final int []  m_vertices_vbo    = new int[1];
-    private final int []  m_normals_vbo     = new int[1];
-    private final int []  m_uvs_vbo         = new int[1];
-    private final int []  m_indices_vbo     = new int[1];
+    private final int []        m_vertices_vbo    = new int[1];
+    private final int []        m_normals_vbo     = new int[1];
+    private final int []        m_uvs_vbo         = new int[1];
+    private final int []        m_indices_vbo     = new int[1];
+    // Uniform Buffer Object
+    private final int []        m_ubo             = new int[1];
 
-    private float[]       m_model_matrix    = new float[16];
-    private float[]       m_normal_matrix   = new float[16];
-
-    // AABB
-    AABB                  m_aabb;
+    private float[]             m_light_matrix      = new float[16];
+    private float[]             m_model_matrix      = new float[16];
+    private float[]             m_normal_matrix     = new float[16];
 
     // Buffers
-    private FloatBuffer   m_vertices_buffer;
-    private FloatBuffer   m_normals_buffer;
-    private FloatBuffer   m_uvs_buffer;
-    private ShortBuffer   m_indices_buffer;
+    private FloatBuffer         m_vertices_buffer;
+    private FloatBuffer         m_normals_buffer;
+    private FloatBuffer         m_uvs_buffer;
+    private ShortBuffer         m_indices_buffer;
 
-    private ArrayList<Float3> m_vertices;
-    private ArrayList<Float3> m_normals;
-    private ArrayList<Float3> m_uvs;
-    private ArrayList<Face3D> m_faces;
+    private FloatBuffer         mw_matrix_buffer;
+    private FloatBuffer         v_matrix_buffer;
+    private FloatBuffer         p_matrix_buffer;
+    private FloatBuffer         n_matrix_buffer;
+    private FloatBuffer         l_matrix_buffer;
+    private FloatBuffer         m_material_buffer;
 
-    private final int sizeofM44 = 16 * Float.BYTES;
+    private ArrayList<Float3>   m_vertices;
+    private ArrayList<Float3>   m_normals;
+    private ArrayList<Float3>   m_uvs;
+    private ArrayList<Face3D>   m_faces;
 
     private float m_vertices_data[];
     private float m_normals_data[];
     private float m_uvs_data[];
     private short m_indices_data[];
 
-    FloatBuffer mw_matrix_buffer;
-    FloatBuffer v_matrix_buffer;
-    FloatBuffer p_matrix_buffer;
-    FloatBuffer n_matrix_buffer;
-
     float m_diffuse_color[] = { 0.2f, 0.709803922f, 0.898039216f, 1.0f };
 
     Mesh(Context context, String name)
     {
-        m_aabb          = new AABB();
-        m_vertices      = new ArrayList<>();
-        m_normals       = new ArrayList<>();
-        m_uvs           = new ArrayList<>();
-        m_faces         = new ArrayList<>();
-        m_name          = name;
-
         Matrix.setIdentityM(m_model_matrix, 0);
 
-        mw_matrix_buffer = ByteBuffer.allocateDirect ( sizeofM44 ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
-        v_matrix_buffer  = ByteBuffer.allocateDirect ( sizeofM44 ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
-        p_matrix_buffer  = ByteBuffer.allocateDirect ( sizeofM44 ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
-        n_matrix_buffer  = ByteBuffer.allocateDirect ( sizeofM44 ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
+        m_aabb              = new AABB();
+        m_vertices          = new ArrayList<>();
+        m_normals           = new ArrayList<>();
+        m_uvs               = new ArrayList<>();
+        m_faces             = new ArrayList<>();
+        m_name              = name;
+
+        mw_matrix_buffer    = ByteBuffer.allocateDirect ( m_sizeofM44    ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
+        v_matrix_buffer     = ByteBuffer.allocateDirect ( m_sizeofM44    ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
+        p_matrix_buffer     = ByteBuffer.allocateDirect ( m_sizeofM44    ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
+        n_matrix_buffer     = ByteBuffer.allocateDirect ( m_sizeofM44    ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
+        l_matrix_buffer     = ByteBuffer.allocateDirect ( m_sizeofM44    ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
+        m_material_buffer   = ByteBuffer.allocateDirect ( m_sizeofM44 * 4).order (ByteOrder.nativeOrder() ).asFloatBuffer();
 
         readMesh(context, name);
     }
@@ -123,46 +101,84 @@ class Mesh {
     /**
      * Encapsulates the OpenGL ES instructions for drawing this shape.
      *
-     * @param mvp_matrix - The Model View Project matrix in which to draw this shape.
      * @param program    - The Shading program which decided how the shape is going to be rendered.
      */
-    void draw(int program, Camera camera, int UBO_Matrices )
+    void draw(int program, Camera camera, Light light, int UBO_Matrices )
     {
-        float[] mw_matrix = new float[16];
-        float[] inv_world_matrix = new float[16];
+        float[] mw_matrix       = new float[16];
+        float[] lmw_matrix      = new float[16];
+        float[] inv_w_matrix    = new float[16];
+        float[] material_data   = new float[16];
 
-        Matrix.invertM(inv_world_matrix, 0, camera.m_world_matrix, 0 );
-        Matrix.transposeM(m_normal_matrix, 0, inv_world_matrix, 0 );
+        Matrix.invertM(inv_w_matrix, 0, camera.m_world_matrix, 0 );
+        Matrix.transposeM(m_normal_matrix, 0, inv_w_matrix, 0 );
         Matrix.multiplyMM(mw_matrix, 0, camera.m_world_matrix, 0, m_model_matrix, 0 );
+
+        Matrix.multiplyMM(lmw_matrix    , 0, light.m_camera.m_view_matrix       , 0, mw_matrix  , 0 );
+        Matrix.multiplyMM(m_light_matrix, 0, light.m_camera.m_projection_matrix , 0, lmw_matrix , 0 );
+
+        glBindBuffer(GL_UNIFORM_BUFFER, UBO_Matrices);
+        {
+            mw_matrix_buffer.put (mw_matrix);
+            mw_matrix_buffer.position ( 0 );
+            glBufferSubData(GL_UNIFORM_BUFFER, 0			, m_sizeofM44, mw_matrix_buffer);
+
+            v_matrix_buffer.put (camera.m_view_matrix);
+            v_matrix_buffer.position ( 0 );
+            glBufferSubData(GL_UNIFORM_BUFFER, 1 * m_sizeofM44, m_sizeofM44, v_matrix_buffer);
+
+            p_matrix_buffer.put (camera.m_projection_matrix);
+            p_matrix_buffer.position ( 0 );
+            glBufferSubData(GL_UNIFORM_BUFFER, 2 * m_sizeofM44, m_sizeofM44, p_matrix_buffer);
+
+            n_matrix_buffer.put (m_normal_matrix);
+            n_matrix_buffer.position ( 0 );
+            glBufferSubData(GL_UNIFORM_BUFFER, 3 * m_sizeofM44, m_sizeofM44, n_matrix_buffer);
+
+            l_matrix_buffer.put (m_light_matrix);
+            l_matrix_buffer.position ( 0 );
+            glBufferSubData(GL_UNIFORM_BUFFER, 4 * m_sizeofM44, m_sizeofM44, l_matrix_buffer);
+        }
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
         // Add program to OpenGL environment
         glUseProgram(program);
         {
             // 2. SET UNIFORMS
             glUniformBlockBinding(program, glGetUniformBlockIndex(program, "Matrices"), 0);
+            glUniformBlockBinding(program, glGetUniformBlockIndex(program, "Material"), 1);
+            glUniformBlockBinding(program, glGetUniformBlockIndex(program, "Light"), 2);
 
-            glBindBuffer(GL_UNIFORM_BUFFER, UBO_Matrices);
+            glProgramUniform3f(program, glGetUniformLocation(program, "uniform_camera.position_wcs"), camera.m_eye.x, camera.m_eye.y, camera.m_eye.z);
+
+            //material_has_tex_loaded
+            material_data[0 ] = 0;
+            material_data[1 ] = 0;
+            material_data[2 ] = 0;
+            material_data[3 ] = 0;
+            //material_diffuse_opacity
+            material_data[4 ] = 0.5f;
+            material_data[5 ] = 0.5f;
+            material_data[6 ] = 0.5f;
+            material_data[7 ] = 1;
+            //material_specular_gloss
+            material_data[8 ] = 1;
+            material_data[9 ] = 1;
+            material_data[10] = 1;
+            material_data[11] = 40;
+            //material_emission
+            material_data[12] = 0;
+            material_data[13] = 0;
+            material_data[14] = 0;
+            material_data[15] = 0;
+
+            glBindBuffer(GL_UNIFORM_BUFFER, m_ubo[0]);
             {
-                mw_matrix_buffer.put (mw_matrix);
-                mw_matrix_buffer.position ( 0 );
-                glBufferSubData(GL_UNIFORM_BUFFER, 0			, sizeofM44, mw_matrix_buffer);
-
-                v_matrix_buffer.put (camera.m_view_matrix);
-                v_matrix_buffer.position ( 0 );
-                glBufferSubData(GL_UNIFORM_BUFFER, 1 * sizeofM44, sizeofM44, v_matrix_buffer);
-
-                p_matrix_buffer.put (camera.m_projection_matrix);
-                p_matrix_buffer.position ( 0 );
-                glBufferSubData(GL_UNIFORM_BUFFER, 2 * sizeofM44, sizeofM44, p_matrix_buffer);
-
-                n_matrix_buffer.put (m_normal_matrix);
-                n_matrix_buffer.position ( 0 );
-                glBufferSubData(GL_UNIFORM_BUFFER, 3 * sizeofM44, sizeofM44, n_matrix_buffer);
+                m_material_buffer.put (material_data);
+                m_material_buffer.position ( 0 );
+                glBufferSubData(GL_UNIFORM_BUFFER, 0, m_sizeofV4*4, m_material_buffer);
             }
             glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-            // Set color for drawing the triangle
-            glUniform4fv(glGetUniformLocation(program, "uniform_diffuse_color"), 1, m_diffuse_color, 0);
 
             // 3. DRAW
             glBindVertexArray ( m_vao[0] );
@@ -218,65 +234,57 @@ class Mesh {
 
            // Log.d("COMMAND BLOCK" , "---------- " + CommandBlock + " ----------");
 
-            if(CommandBlock.equals("#"))
-                continue;
-            else if(CommandBlock.equals("v"))
-            {
-                Float3  vertex = new Float3(Float.parseFloat(Blocks[1]), Float.parseFloat(Blocks[2]), Float.parseFloat(Blocks[3]));
-                m_vertices.add(vertex);
+            switch (CommandBlock) {
+                case "v":
+                    Float3 vertex = new Float3(Float.parseFloat(Blocks[1]), Float.parseFloat(Blocks[2]), Float.parseFloat(Blocks[3]));
+                    m_vertices.add(vertex);
 
-                m_aabb.m_min.x = Math.min(m_aabb.m_min.x, vertex.x );
-                m_aabb.m_min.y = Math.min(m_aabb.m_min.y, vertex.y );
-                m_aabb.m_min.z = Math.min(m_aabb.m_min.z, vertex.z );
+                    m_aabb.m_min.x = Math.min(m_aabb.m_min.x, vertex.x);
+                    m_aabb.m_min.y = Math.min(m_aabb.m_min.y, vertex.y);
+                    m_aabb.m_min.z = Math.min(m_aabb.m_min.z, vertex.z);
 
-                m_aabb.m_max.x = Math.max(m_aabb.m_max.x, vertex.x );
-                m_aabb.m_max.y = Math.max(m_aabb.m_max.y, vertex.y );
-                m_aabb.m_max.z = Math.max(m_aabb.m_max.z, vertex.z );
+                    m_aabb.m_max.x = Math.max(m_aabb.m_max.x, vertex.x);
+                    m_aabb.m_max.y = Math.max(m_aabb.m_max.y, vertex.y);
+                    m_aabb.m_max.z = Math.max(m_aabb.m_max.z, vertex.z);
 
-               // Log.d("VERTEX DATA", " " + vertex.x + ", " + vertex.y + ", " + vertex.z);
-            }
-            else if(CommandBlock.equals("vt"))
-            {
-                Float3 vertexTex = new Float3(Float.parseFloat(Blocks[1]), Float.parseFloat(Blocks[2]), 0.0f);
-                m_uvs.add(vertexTex);
-               // Log.d("TEXTURE DATA", " " + vertexTex.x + ", " + vertexTex.y + ", " + vertexTex.z);
-            }
-            else if(CommandBlock.equals("vn"))
-            {
-                Float3 vertexNorm = new Float3(Float.parseFloat(Blocks[1]), Float.parseFloat(Blocks[2]), Float.parseFloat(Blocks[3]));
-                m_normals.add(vertexNorm);
-               // Log.d("NORMAL DATA", " " + vertexNorm.x + ", " + vertexNorm.y + ", " + vertexNorm.z);
-            }
-            else if(CommandBlock.equals("f"))
-            {
-                String[] faceParams;
+                    // Log.d("VERTEX DATA", " " + vertex.x + ", " + vertex.y + ", " + vertex.z);
+                    break;
+                case "vt":
+                    Float3 vertexTex = new Float3(Float.parseFloat(Blocks[1]), Float.parseFloat(Blocks[2]), 0.0f);
+                    m_uvs.add(vertexTex);
+                    // Log.d("TEXTURE DATA", " " + vertexTex.x + ", " + vertexTex.y + ", " + vertexTex.z);
+                    break;
+                case "vn":
+                    Float3 vertexNorm = new Float3(Float.parseFloat(Blocks[1]), Float.parseFloat(Blocks[2]), Float.parseFloat(Blocks[3]));
+                    m_normals.add(vertexNorm);
+                    // Log.d("NORMAL DATA", " " + vertexNorm.x + ", " + vertexNorm.y + ", " + vertexNorm.z);
+                    break;
+                case "f":
+                    String[] faceParams;
 
-                Face3D face = new Face3D();
-                for(int i = 1; i < Blocks.length ; i++)
-                {
-                    String split_char = "/";
-                    if(Blocks[i].contains("//"))
-                        split_char = "//";
+                    Face3D face = new Face3D();
+                    for (int i = 1; i < Blocks.length; i++) {
+                        String split_char = "/";
+                        if (Blocks[i].contains("//"))
+                            split_char = "//";
 
-                    faceParams = Blocks[i].split(split_char);
+                        faceParams = Blocks[i].split(split_char);
 
-                    face.vertices.add(Integer.parseInt(faceParams[0]) - 1);
-                    if(faceParams.length == 2)
-                    {
-                        if(!m_uvs.isEmpty())
-                            face.uvs.add    (Integer.parseInt(faceParams[1]) - 1);
-                        else if(!m_normals.isEmpty())
-                            face.normals.add(Integer.parseInt(faceParams[1]) - 1);
+                        face.vertices.add(Integer.parseInt(faceParams[0]) - 1);
+                        if (faceParams.length == 2) {
+                            if (!m_uvs.isEmpty())
+                                face.uvs.add(Integer.parseInt(faceParams[1]) - 1);
+                            else if (!m_normals.isEmpty())
+                                face.normals.add(Integer.parseInt(faceParams[1]) - 1);
+                        } else if (faceParams.length == 3) {
+                            if (!m_uvs.isEmpty())
+                                face.uvs.add(Integer.parseInt(faceParams[1]) - 1);
+                            if (!m_normals.isEmpty())
+                                face.normals.add(Integer.parseInt(faceParams[2]) - 1);
+                        }
                     }
-                    else if(faceParams.length == 3)
-                    {
-                        if(!m_uvs.isEmpty())
-                            face.uvs.add    (Integer.parseInt(faceParams[1]) - 1);
-                        if(!m_normals.isEmpty())
-                            face.normals.add(Integer.parseInt(faceParams[2]) - 1);
-                    }
-                }
-                m_faces.add(face);
+                    m_faces.add(face);
+                    break;
             }
         }
 
@@ -346,6 +354,7 @@ class Mesh {
         createBuffers();
         createVBOs();
         createVAO();
+        createUBO();
     }
 
     private void createBuffers()
@@ -447,5 +456,16 @@ class Mesh {
         }
         // Reset to the default VAO
         glBindVertexArray ( 0 );
+    }
+
+    private void createUBO()
+    {
+        glGenBuffers(1, m_ubo, 0);
+        glBindBuffer(GL_UNIFORM_BUFFER, m_ubo[0]);
+        {
+            glBufferData(GL_UNIFORM_BUFFER, 4 * m_sizeofV4, null, GL_DYNAMIC_DRAW);
+        }
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_ubo[0]);
     }
 }

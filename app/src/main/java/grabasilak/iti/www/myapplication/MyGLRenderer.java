@@ -2,38 +2,21 @@ package grabasilak.iti.www.myapplication;
 
 import android.content.Context;
 import android.opengl.GLSurfaceView;
+import android.renderscript.Float3;
 
 import java.util.ArrayList;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-import static android.opengl.GLES31.GL_BACK;
-import static android.opengl.GLES31.GL_CCW;
-import static android.opengl.GLES31.GL_COLOR_BUFFER_BIT;
-import static android.opengl.GLES31.GL_CULL_FACE;
-import static android.opengl.GLES31.GL_DEPTH_BUFFER_BIT;
-import static android.opengl.GLES31.GL_DEPTH_TEST;
-import static android.opengl.GLES31.GL_DYNAMIC_DRAW;
-import static android.opengl.GLES31.GL_LEQUAL;
-import static android.opengl.GLES31.GL_UNIFORM_BUFFER;
-import static android.opengl.GLES31.glBindBuffer;
-import static android.opengl.GLES31.glBindBufferBase;
-import static android.opengl.GLES31.glBufferData;
-import static android.opengl.GLES31.glClear;
-import static android.opengl.GLES31.glClearColor;
-import static android.opengl.GLES31.glClearDepthf;
-import static android.opengl.GLES31.glCullFace;
-import static android.opengl.GLES31.glDepthFunc;
-import static android.opengl.GLES31.glEnable;
-import static android.opengl.GLES31.glFrontFace;
-import static android.opengl.GLES31.glGenBuffers;
+import static android.opengl.GLES31.*;
+import static grabasilak.iti.www.myapplication.Util.m_theta;
 
 class MyGLRenderer implements GLSurfaceView.Renderer {
 
             AABB            m_aabb;
             Camera          m_camera;
-
+    private Light           m_light;
 
     private Context         m_context;
 
@@ -41,9 +24,7 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
 
     private Shader          m_shader;
 
-    int [] m_ubo_matrices = new int[1];
-
-    final float             m_theta = (float) Math.sin(Math.PI / 8.0f);
+    private int []          m_ubo_matrices = new int[1];
 
     private RenderingSettings m_rendering_settings;
 
@@ -56,29 +37,24 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
     // INIT FUNCTION
     public void onSurfaceCreated(GL10 unused, EGLConfig config) {
 
-        glGenBuffers(1, m_ubo_matrices, 0);
-        glBindBuffer(GL_UNIFORM_BUFFER, m_ubo_matrices[0]);
-        {
-            glBufferData(GL_UNIFORM_BUFFER, 4 * 16 * Float.BYTES, null, GL_DYNAMIC_DRAW);
-        }
-        glBindBuffer(GL_UNIFORM_BUFFER, 0);
-        glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_ubo_matrices[0]);
-
         m_aabb      = new AABB();
+        m_light     = new Light();
         m_camera    = new Camera();
         m_meshes    = new ArrayList<>();
 
         // Load Meshes
-        addMesh(m_context.getString(R.string.MESH_NAME));
+        addMesh(m_context.getString(R.string.MESH_NAME), true);
 
         // Load Shaders
         m_shader = new Shader(m_context,  m_context.getString(R.string.SHADING_NAME));
 
+        createUBO();
+
         // Set the background frame color
-        glClearColor(m_rendering_settings.m_background_color[0],
-                m_rendering_settings.m_background_color[1],
-                m_rendering_settings.m_background_color[2],
-                m_rendering_settings.m_background_color[3]);
+        glClearColor(   m_rendering_settings.m_background_color[0],
+                        m_rendering_settings.m_background_color[1],
+                        m_rendering_settings.m_background_color[2],
+                        m_rendering_settings.m_background_color[3]);
 
         glClearDepthf(m_rendering_settings.m_depth);
 
@@ -100,6 +76,16 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         // Redraw background color
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        // Animate Lights
+        m_light.animation();
+
+        // Shadow Mapping
+        if (m_light.m_is_animated)
+        {
+            m_light.m_is_animated = false;
+            //m_light.drawSceneToShadowFBO();
+        }
+
         if(m_meshes.size()>0)
         {
             m_camera.computeWorldMatrix();
@@ -107,7 +93,7 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
 
             // Render Meshes
             for (int i = 0; i < m_meshes.size(); i++)
-                m_meshes.get(i).draw(m_shader.getProgram(), m_camera, m_ubo_matrices[0]);
+                m_meshes.get(i).draw(m_shader.getProgram(), m_camera, m_light, m_ubo_matrices[0]);
         }
 
         // Get the amount of time the last frame took.
@@ -125,7 +111,7 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         m_camera.computeProjectionMatrix(m_rendering_settings.m_viewport.getAspectRatio());
     }
 
-    void addMesh(String fileName)
+    private void addMesh(String fileName, boolean align_to_aabb)
     {
         // Load Mesh
         Mesh new_mesh = new Mesh(m_context, fileName);
@@ -144,21 +130,35 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         m_aabb.computeCenter();
         m_aabb.computeRadius();
 
-        // Update Camera
-        {
-            float dis = ((Math.max(Math.abs(m_aabb.m_max.x - m_aabb.m_min.x), Math.abs(m_aabb.m_max.z - m_aabb.m_min.z))) / m_theta) + 0.001f;
+        float dis = ((Math.max(Math.abs(m_aabb.m_max.x - m_aabb.m_min.x), Math.abs(m_aabb.m_max.z - m_aabb.m_min.z))) / m_theta) + 0.001f;
 
+        if(align_to_aabb)
+        {
+            // Update Camera
             m_camera.m_eye.x    = m_aabb.m_center.x + dis;
             m_camera.m_eye.y    = m_aabb.m_center.y + dis;
             m_camera.m_eye.z    = m_aabb.m_center.z + dis;
-            m_camera.m_target   = m_aabb.m_center;
-        }
+            m_camera.m_target   = new Float3(m_aabb.m_center.x, m_aabb.m_center.y, m_aabb.m_center.z);
 
-        // WORKING!!
-//        Mesh m = m_meshes.get(0);
-//        m.m_diffuse_color[0] = 1;
-//        m.m_diffuse_color[1] = 0;
-//        m.m_diffuse_color[2] = 0;
-//        m.m_diffuse_color[3] = 1;
+            // Update Light
+            m_light.m_camera.m_eye.x   = m_aabb.m_center.x + dis;
+            m_light.m_camera.m_eye.y   = m_aabb.m_center.y + dis;
+            m_light.m_camera.m_eye.z   = m_aabb.m_center.z + dis;
+            m_light.m_camera.m_target  = m_aabb.m_center;
+
+            m_light.m_initial_position = new Float3(m_light.m_camera.m_eye.x, m_light.m_camera.m_eye.y, m_light.m_camera.m_eye.z);
+            m_light.createUBO();
+        }
+    }
+
+    private void createUBO()
+    {
+        glGenBuffers(1, m_ubo_matrices, 0);
+        glBindBuffer(GL_UNIFORM_BUFFER, m_ubo_matrices[0]);
+        {
+            glBufferData(GL_UNIFORM_BUFFER, 5 * 16 * Float.BYTES, null, GL_DYNAMIC_DRAW); // 5 Mat4x4 are included in this UBO
+        }
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_ubo_matrices[0]);
     }
 }

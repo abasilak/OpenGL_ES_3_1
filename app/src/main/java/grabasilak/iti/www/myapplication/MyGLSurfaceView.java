@@ -12,7 +12,7 @@ import android.view.MotionEvent;
  */
 class MyGLSurfaceView extends GLSurfaceView
 {
-    private final  int   m_renderer_mode = GLSurfaceView.RENDERMODE_WHEN_DIRTY; //or use 'RENDERMODE_WHEN_DIRTY'
+    private final  int   m_renderer_mode = GLSurfaceView.RENDERMODE_CONTINUOUSLY; //or use 'RENDERMODE_WHEN_DIRTY'
     MyGLRenderer m_renderer;
 
     public MyGLSurfaceView(Context context)

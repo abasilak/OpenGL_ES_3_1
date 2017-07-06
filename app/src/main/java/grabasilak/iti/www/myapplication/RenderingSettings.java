@@ -1,12 +1,10 @@
 package grabasilak.iti.www.myapplication;
 
 import android.content.res.Resources;
-import android.opengl.GLES31;
 import android.util.Log;
 
-/**
- * Created by Andreas on 16-Jun-17.
- */
+import static android.opengl.GLES31.GL_NO_ERROR;
+import static android.opengl.GLES31.glGetError;
 
 public class RenderingSettings {
 
@@ -32,7 +30,7 @@ public class RenderingSettings {
     public void checkGlError(String glOperation) {
 
         int error;
-        while ((error = GLES31.glGetError()) != GLES31.GL_NO_ERROR)
+        while ((error = glGetError()) != GL_NO_ERROR)
         {
             Log.e(Resources.getSystem().getString(R.string.APP_TITLE), glOperation + ": glError " + error);
             throw new RuntimeException(glOperation + ": glError " + error);
