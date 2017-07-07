@@ -36,7 +36,6 @@ import static grabasilak.iti.www.myapplication.Util.m_sizeofV4;
 
 class Mesh {
                 AABB            m_aabb;
-    private     String          m_name;
 
     // Vertex Array Object
     private final int []        m_vao             = new int[1];
@@ -75,8 +74,6 @@ class Mesh {
     private float m_uvs_data[];
     private short m_indices_data[];
 
-    float m_diffuse_color[] = { 0.2f, 0.709803922f, 0.898039216f, 1.0f };
-
     Mesh(Context context, String name)
     {
         Matrix.setIdentityM(m_model_matrix, 0);
@@ -86,14 +83,13 @@ class Mesh {
         m_normals           = new ArrayList<>();
         m_uvs               = new ArrayList<>();
         m_faces             = new ArrayList<>();
-        m_name              = name;
 
         mw_matrix_buffer    = ByteBuffer.allocateDirect ( m_sizeofM44    ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
         v_matrix_buffer     = ByteBuffer.allocateDirect ( m_sizeofM44    ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
         p_matrix_buffer     = ByteBuffer.allocateDirect ( m_sizeofM44    ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
         n_matrix_buffer     = ByteBuffer.allocateDirect ( m_sizeofM44    ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
         l_matrix_buffer     = ByteBuffer.allocateDirect ( m_sizeofM44    ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
-        m_material_buffer   = ByteBuffer.allocateDirect ( m_sizeofM44 * 4).order (ByteOrder.nativeOrder() ).asFloatBuffer();
+        m_material_buffer   = ByteBuffer.allocateDirect ( m_sizeofM44 * 4).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
 
         readMesh(context, name);
     }
@@ -145,11 +141,19 @@ class Mesh {
         glUseProgram(program);
         {
             // 2. SET UNIFORMS
-            glUniformBlockBinding(program, glGetUniformBlockIndex(program, "Matrices"), 0);
-            glUniformBlockBinding(program, glGetUniformBlockIndex(program, "Material"), 1);
-            glUniformBlockBinding(program, glGetUniformBlockIndex(program, "Light"), 2);
+            glUniformBlockBinding(program, glGetUniformBlockIndex(program, "Matrices")  , 0);
+            glUniformBlockBinding(program, glGetUniformBlockIndex(program, "Material")  , 1);
+            glUniformBlockBinding(program, glGetUniformBlockIndex(program, "Light")     , 2);
+
+            glUniform1i(glGetUniformLocation(program, "uniform_textures.diffuse")       , 0);
+            glUniform1i(glGetUniformLocation(program, "uniform_textures.normal")        , 1);
+            glUniform1i(glGetUniformLocation(program, "uniform_textures.specular")      , 2);
+            glUniform1i(glGetUniformLocation(program, "uniform_textures.emission")      , 3);
+            glUniform1i(glGetUniformLocation(program, "uniform_textures.shadow_map")    , 4);
 
             glProgramUniform3f(program, glGetUniformLocation(program, "uniform_camera.position_wcs"), camera.m_eye.x, camera.m_eye.y, camera.m_eye.z);
+
+            // 3. SET UBOs
 
             //material_has_tex_loaded
             material_data[0 ] = 0;
@@ -157,7 +161,7 @@ class Mesh {
             material_data[2 ] = 0;
             material_data[3 ] = 0;
             //material_diffuse_opacity
-            material_data[4 ] = 0.5f;
+            material_data[4 ] = 1.0f;
             material_data[5 ] = 0.5f;
             material_data[6 ] = 0.5f;
             material_data[7 ] = 1;
@@ -180,6 +184,12 @@ class Mesh {
             }
             glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
+            // 4. SET TEXTURES
+
+            // bind the depth texture to the active texture unit
+            glActiveTexture(GL_TEXTURE4);
+            glBindTexture(GL_TEXTURE_2D, light.m_shadow_map_texture[0]);
+
             // 3. DRAW
             glBindVertexArray ( m_vao[0] );
             {
@@ -188,6 +198,70 @@ class Mesh {
             glBindVertexArray ( 0 );
         }
         glUseProgram(0);
+    }
+
+    void drawSceneToShadowFBO(int program, Light light)
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, light.m_shadow_map_fbo[0]);
+        {
+            light.m_shadow_map_viewport.setViewport();
+            glClearDepthf(1.0f);
+            glClear(GL_DEPTH_BUFFER_BIT);
+
+            // disable color
+            glColorMask(false, false, false, false);
+
+            // Create the light's world to view space matrix
+            // we need to build a "camera" as viewed from the light
+            // so we need an up vector, a target and a light "eye" position
+            // create the direction vector
+            /*vec3 light_direction = normalize(m_camera->m_target - m_camera->m_eye);
+
+            // this check is simply a sanity check for the internal cross product in glm::lookAt
+            // just in case the light direction vector is 0,1,0
+            // if it is, the up vector is setto 0,0,1
+            if (fabs(light_direction.z) < 0.001f && fabs(light_direction.x) < 0.001f)
+                m_camera->m_up = vec3(0, 0, 1);
+            else
+                m_camera->m_up = vec3(0, 1, 0);*/
+
+            // construct the light view matrix that transforms world space to light view space (WCS -> LCS)
+            // LCS is the view space of the light, similar to ECS which is the view space for the camera
+            light.m_camera.computeViewMatrix();
+
+            //float h = spotlight->m_near_range *glm::tan(glm::radians(spotlight->m_aperture * 0.5f));
+            //glm::mat4x4 light_projection_matrix = glm::frustum(-h, h, -h, h, spotlight->m_near_range, spotlight->m_far_range);
+            // aspect ratio is 1 since both width and height are the same (dimensions of the texture)
+            light.m_camera.computeProjectionMatrix(light.m_shadow_map_viewport.m_aspect_ratio);
+
+            // now draw the scene as usual
+            {
+                float[] mw_matrix  = new float[16];
+                float[] mv_matrix  = new float[16];
+                float[] mvp_matrix = new float[16];
+
+                Matrix.multiplyMM(mw_matrix , 0, light.m_camera.m_world_matrix      , 0, m_model_matrix, 0 );
+                Matrix.multiplyMM(mv_matrix , 0, light.m_camera.m_view_matrix       , 0, mw_matrix , 0 );
+                Matrix.multiplyMM(mvp_matrix, 0, light.m_camera.m_projection_matrix , 0, mv_matrix , 0 );
+
+                // Add program to OpenGL environment
+                glUseProgram(program);
+                {
+                    // 2. SET UNIFORMS
+                    glProgramUniformMatrix4fv(program, glGetUniformLocation(program, "uniform_mvp"), 1, false, mvp_matrix, 0);
+                    // 3. DRAW
+                    glBindVertexArray ( m_vao[0] );
+                    {
+                        glDrawRangeElements(GL_TRIANGLES, 0, m_indices_data.length, m_indices_data.length, GL_UNSIGNED_SHORT, 0);
+                    }
+                    glBindVertexArray ( 0 );
+                }
+                glUseProgram(0);
+            }
+            // enable color
+            glColorMask(true, true, true, true);
+        }
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
     private boolean readMesh(Context context, String name) {

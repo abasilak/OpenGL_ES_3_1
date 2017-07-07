@@ -22,7 +22,8 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
 
     private ArrayList<Mesh> m_meshes;
 
-    private Shader          m_shader;
+    private Shader          m_forward_rendering;
+    private Shader          m_shadow_rendering;
 
     private int []          m_ubo_matrices = new int[1];
 
@@ -39,6 +40,7 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
 
         m_aabb      = new AABB();
         m_light     = new Light();
+
         m_camera    = new Camera();
         m_meshes    = new ArrayList<>();
 
@@ -46,7 +48,8 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         addMesh(m_context.getString(R.string.MESH_NAME), true);
 
         // Load Shaders
-        m_shader = new Shader(m_context,  m_context.getString(R.string.SHADING_NAME));
+        m_forward_rendering = new Shader(m_context,  m_context.getString(R.string.SHADER_FORWARD_NAME));
+        m_shadow_rendering  = new Shader(m_context,  m_context.getString(R.string.SHADER_SHADOW_NAME));
 
         createUBO();
 
@@ -67,15 +70,12 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         glCullFace(GL_BACK);
         glFrontFace(GL_CCW);
 
-        m_rendering_settings.checkGlError("onSurfaceCreated");
+        RenderingSettings.checkGlError("onSurfaceCreated");
     }
 
     // DRAW FUNCTION
     public void onDrawFrame(GL10 unused)
     {
-        // Redraw background color
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
         // Animate Lights
         m_light.animation();
 
@@ -83,8 +83,13 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         if (m_light.m_is_animated)
         {
             m_light.m_is_animated = false;
-            //m_light.drawSceneToShadowFBO();
+            for (int i = 0; i < m_meshes.size(); i++)
+                m_meshes.get(i).drawSceneToShadowFBO(m_shadow_rendering.getProgram(), m_light);
         }
+
+        // Redraw background color
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        m_rendering_settings.m_viewport.setViewport();
 
         if(m_meshes.size()>0)
         {
@@ -93,7 +98,7 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
 
             // Render Meshes
             for (int i = 0; i < m_meshes.size(); i++)
-                m_meshes.get(i).draw(m_shader.getProgram(), m_camera, m_light, m_ubo_matrices[0]);
+                m_meshes.get(i).draw(m_forward_rendering.getProgram(), m_camera, m_light, m_ubo_matrices[0]);
         }
 
         // Get the amount of time the last frame took.

@@ -1,8 +1,15 @@
 package grabasilak.iti.www.myapplication;
 
 import android.content.res.Resources;
+import android.opengl.GLES20;
 import android.util.Log;
 
+import static android.opengl.GLES20.GL_FRAMEBUFFER_COMPLETE;
+import static android.opengl.GLES20.GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
+import static android.opengl.GLES20.GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS;
+import static android.opengl.GLES20.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT;
+import static android.opengl.GLES20.GL_FRAMEBUFFER_UNSUPPORTED;
+import static android.opengl.GLES20.glCheckFramebufferStatus;
 import static android.opengl.GLES31.GL_NO_ERROR;
 import static android.opengl.GLES31.glGetError;
 
@@ -27,13 +34,36 @@ public class RenderingSettings {
         m_background_color[3]   = 1.0f;
     }
 
-    public void checkGlError(String glOperation) {
+    public static void checkGlError(String glOperation) {
 
         int error;
         while ((error = glGetError()) != GL_NO_ERROR)
         {
             Log.e(Resources.getSystem().getString(R.string.APP_TITLE), glOperation + ": glError " + error);
             throw new RuntimeException(glOperation + ": glError " + error);
+        }
+    }
+
+    public static void checkFramebufferStatus() {
+        int status = glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER);
+        if (status != GL_FRAMEBUFFER_COMPLETE) {
+            String msg = "";
+            switch (status) {
+                case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+                    msg = "GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT";
+                    break;
+                case GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS:
+                    msg = "GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS";
+                    break;
+                case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+                    msg = "GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT";
+                    break;
+                case GL_FRAMEBUFFER_UNSUPPORTED:
+                    msg = "GL_FRAMEBUFFER_UNSUPPORTED";
+                    break;
+            }
+            Log.e(Resources.getSystem().getString(R.string.APP_TITLE), msg + ": glError " +  Integer.toHexString(status));
+            throw new RuntimeException(msg + ": Framebuffer Status" + Integer.toHexString(status));
         }
     }
 

@@ -9,7 +9,6 @@ import java.nio.FloatBuffer;
 
 import static android.opengl.GLES31.*;
 import static grabasilak.iti.www.myapplication.Util.m_sizeofV4;
-import static javax.microedition.khronos.opengles.GL11ExtensionPack.GL_DEPTH_COMPONENT32;
 
 class Light {
 
@@ -27,6 +26,8 @@ class Light {
     private float	    m_att_linear;
     private float	    m_att_quadratic;
 
+
+    private final int	m_shadow_size           = 1024;
     int	[]		        m_shadow_map_fbo        = new int[1];
     int	[]		        m_shadow_map_texture    = new int[1];
     final Viewport      m_shadow_map_viewport;
@@ -44,18 +45,18 @@ class Light {
         m_spotlight_cutoff	    = 30.0f;
 
         m_is_spotlight          = true;
-        m_casts_shadows         = true;
+        m_casts_shadows         = false;
 
         m_camera                = new Camera();
         m_camera.m_fov          = 90.0f;
 
         m_initial_position      = new Float3(0.0f,0.0f,0.0f);
 
-        m_shadow_map_viewport   = new Viewport(0, 0, 1024, 1024);
+        m_shadow_map_viewport   = new Viewport(0, 0, m_shadow_size, m_shadow_size);
 
         m_color                 = new Float3(1.0f,1.0f,1.0f);
 
-        //createShadowFBO();
+        createShadowFBO();
     }
 
     void createUBO()
@@ -182,7 +183,7 @@ class Light {
         glGenTextures(1, m_shadow_map_texture, 0);
         glBindTexture(GL_TEXTURE_2D, m_shadow_map_texture[0]);
         {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, m_shadow_map_viewport.m_width, m_shadow_map_viewport.m_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, null);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, m_shadow_map_viewport.m_width, m_shadow_map_viewport.m_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, null);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -197,5 +198,7 @@ class Light {
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_shadow_map_texture[0], 0);
         }
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        RenderingSettings.checkFramebufferStatus();
     }
 }
