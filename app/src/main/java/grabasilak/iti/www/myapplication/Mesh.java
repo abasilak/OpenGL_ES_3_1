@@ -17,7 +17,6 @@ package grabasilak.iti.www.myapplication;
 
 import android.content.Context;
 import android.opengl.Matrix;
-import android.renderscript.Float3;
 import android.util.Log;
 
 import java.io.BufferedReader;
@@ -30,7 +29,41 @@ import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 import java.util.ArrayList;
 
-import static android.opengl.GLES31.*;
+import static android.opengl.GLES31.GL_ARRAY_BUFFER;
+import static android.opengl.GLES31.GL_DEPTH_BUFFER_BIT;
+import static android.opengl.GLES31.GL_DYNAMIC_DRAW;
+import static android.opengl.GLES31.GL_ELEMENT_ARRAY_BUFFER;
+import static android.opengl.GLES31.GL_FLOAT;
+import static android.opengl.GLES31.GL_FRAMEBUFFER;
+import static android.opengl.GLES31.GL_STATIC_DRAW;
+import static android.opengl.GLES31.GL_TEXTURE4;
+import static android.opengl.GLES31.GL_TEXTURE_2D;
+import static android.opengl.GLES31.GL_TRIANGLES;
+import static android.opengl.GLES31.GL_UNIFORM_BUFFER;
+import static android.opengl.GLES31.GL_UNSIGNED_SHORT;
+import static android.opengl.GLES31.glActiveTexture;
+import static android.opengl.GLES31.glBindBuffer;
+import static android.opengl.GLES31.glBindBufferBase;
+import static android.opengl.GLES31.glBindFramebuffer;
+import static android.opengl.GLES31.glBindTexture;
+import static android.opengl.GLES31.glBindVertexArray;
+import static android.opengl.GLES31.glBufferData;
+import static android.opengl.GLES31.glBufferSubData;
+import static android.opengl.GLES31.glClear;
+import static android.opengl.GLES31.glClearDepthf;
+import static android.opengl.GLES31.glColorMask;
+import static android.opengl.GLES31.glDrawRangeElements;
+import static android.opengl.GLES31.glEnableVertexAttribArray;
+import static android.opengl.GLES31.glGenBuffers;
+import static android.opengl.GLES31.glGenVertexArrays;
+import static android.opengl.GLES31.glGetUniformBlockIndex;
+import static android.opengl.GLES31.glGetUniformLocation;
+import static android.opengl.GLES31.glProgramUniform3f;
+import static android.opengl.GLES31.glProgramUniformMatrix4fv;
+import static android.opengl.GLES31.glUniform1i;
+import static android.opengl.GLES31.glUniformBlockBinding;
+import static android.opengl.GLES31.glUseProgram;
+import static android.opengl.GLES31.glVertexAttribPointer;
 import static grabasilak.iti.www.myapplication.Util.m_sizeofM44;
 import static grabasilak.iti.www.myapplication.Util.m_sizeofV4;
 
@@ -64,9 +97,9 @@ class Mesh {
     private FloatBuffer         l_matrix_buffer;
     private FloatBuffer         m_material_buffer;
 
-    private ArrayList<Float3>   m_vertices;
-    private ArrayList<Float3>   m_normals;
-    private ArrayList<Float3>   m_uvs;
+    private ArrayList<float[]>  m_vertices;
+    private ArrayList<float[]>  m_normals;
+    private ArrayList<float[]>  m_uvs;
     private ArrayList<Face3D>   m_faces;
 
     private float m_vertices_data[];
@@ -310,26 +343,37 @@ class Mesh {
 
             switch (CommandBlock) {
                 case "v":
-                    Float3 vertex = new Float3(Float.parseFloat(Blocks[1]), Float.parseFloat(Blocks[2]), Float.parseFloat(Blocks[3]));
+                    float [] vertex = new float[3];
+                    vertex[0] = Float.parseFloat(Blocks[1]);
+                    vertex[1] = Float.parseFloat(Blocks[2]);
+                    vertex[2] = Float.parseFloat(Blocks[3]);
                     m_vertices.add(vertex);
 
-                    m_aabb.m_min[0] = Math.min(m_aabb.m_min[0], vertex.x);
-                    m_aabb.m_min[1] = Math.min(m_aabb.m_min[1], vertex.y);
-                    m_aabb.m_min[2] = Math.min(m_aabb.m_min[2], vertex.z);
+                    m_aabb.m_min[0] = Math.min(m_aabb.m_min[0], vertex[0]);
+                    m_aabb.m_min[1] = Math.min(m_aabb.m_min[1], vertex[1]);
+                    m_aabb.m_min[2] = Math.min(m_aabb.m_min[2], vertex[2]);
 
-                    m_aabb.m_max[0] = Math.max(m_aabb.m_max[0], vertex.x);
-                    m_aabb.m_max[1] = Math.max(m_aabb.m_max[1], vertex.y);
-                    m_aabb.m_max[2] = Math.max(m_aabb.m_max[2], vertex.z);
+                    m_aabb.m_max[0] = Math.max(m_aabb.m_max[0], vertex[0]);
+                    m_aabb.m_max[1] = Math.max(m_aabb.m_max[1], vertex[1]);
+                    m_aabb.m_max[2] = Math.max(m_aabb.m_max[2], vertex[2]);
 
                     // Log.d("VERTEX DATA", " " + vertex.x + ", " + vertex.y + ", " + vertex.z);
                     break;
                 case "vt":
-                    Float3 vertexTex = new Float3(Float.parseFloat(Blocks[1]), Float.parseFloat(Blocks[2]), 0.0f);
+                    float [] vertexTex = new float[3];
+                    vertexTex[0] = Float.parseFloat(Blocks[1]);
+                    vertexTex[1] = Float.parseFloat(Blocks[2]);
+                    vertexTex[2] = 0.0f;
+
                     m_uvs.add(vertexTex);
                     // Log.d("TEXTURE DATA", " " + vertexTex.x + ", " + vertexTex.y + ", " + vertexTex.z);
                     break;
                 case "vn":
-                    Float3 vertexNorm = new Float3(Float.parseFloat(Blocks[1]), Float.parseFloat(Blocks[2]), Float.parseFloat(Blocks[3]));
+                    float [] vertexNorm = new float[3];
+                    vertexNorm[0] = Float.parseFloat(Blocks[1]);
+                    vertexNorm[1] = Float.parseFloat(Blocks[2]);
+                    vertexNorm[2] = Float.parseFloat(Blocks[3]);
+
                     m_normals.add(vertexNorm);
                     // Log.d("NORMAL DATA", " " + vertexNorm.x + ", " + vertexNorm.y + ", " + vertexNorm.z);
                     break;
@@ -380,42 +424,42 @@ class Mesh {
         for(int i = 0; i < m_faces.size(); i++)
         {
             Face3D face = m_faces.get(i);
-            m_vertices_data[i * 9]     = m_vertices.get(face.vertices.get(0)).x;
-            m_vertices_data[i * 9 + 1] = m_vertices.get(face.vertices.get(0)).y;
-            m_vertices_data[i * 9 + 2] = m_vertices.get(face.vertices.get(0)).z;
-            m_vertices_data[i * 9 + 3] = m_vertices.get(face.vertices.get(1)).x;
-            m_vertices_data[i * 9 + 4] = m_vertices.get(face.vertices.get(1)).y;
-            m_vertices_data[i * 9 + 5] = m_vertices.get(face.vertices.get(1)).z;
-            m_vertices_data[i * 9 + 6] = m_vertices.get(face.vertices.get(2)).x;
-            m_vertices_data[i * 9 + 7] = m_vertices.get(face.vertices.get(2)).y;
-            m_vertices_data[i * 9 + 8] = m_vertices.get(face.vertices.get(2)).z;
+            m_vertices_data[i * 9]     = m_vertices.get(face.vertices.get(0))[0];
+            m_vertices_data[i * 9 + 1] = m_vertices.get(face.vertices.get(0))[1];
+            m_vertices_data[i * 9 + 2] = m_vertices.get(face.vertices.get(0))[2];
+            m_vertices_data[i * 9 + 3] = m_vertices.get(face.vertices.get(1))[0];
+            m_vertices_data[i * 9 + 4] = m_vertices.get(face.vertices.get(1))[1];
+            m_vertices_data[i * 9 + 5] = m_vertices.get(face.vertices.get(1))[2];
+            m_vertices_data[i * 9 + 6] = m_vertices.get(face.vertices.get(2))[0];
+            m_vertices_data[i * 9 + 7] = m_vertices.get(face.vertices.get(2))[1];
+            m_vertices_data[i * 9 + 8] = m_vertices.get(face.vertices.get(2))[2];
         }
 
         if(!m_normals.isEmpty())
             for(int i = 0; i < m_faces.size(); i++)
             {
                 Face3D face = m_faces.get(i);
-                m_normals_data[i * 9]     = m_normals.get(face.normals.get(0)).x;
-                m_normals_data[i * 9 + 1] = m_normals.get(face.normals.get(0)).y;
-                m_normals_data[i * 9 + 2] = m_normals.get(face.normals.get(0)).z;
-                m_normals_data[i * 9 + 3] = m_normals.get(face.normals.get(1)).x;
-                m_normals_data[i * 9 + 4] = m_normals.get(face.normals.get(1)).y;
-                m_normals_data[i * 9 + 5] = m_normals.get(face.normals.get(1)).z;
-                m_normals_data[i * 9 + 6] = m_normals.get(face.normals.get(2)).x;
-                m_normals_data[i * 9 + 7] = m_normals.get(face.normals.get(2)).y;
-                m_normals_data[i * 9 + 8] = m_normals.get(face.normals.get(2)).z;
+                m_normals_data[i * 9]     = m_normals.get(face.normals.get(0))[0];
+                m_normals_data[i * 9 + 1] = m_normals.get(face.normals.get(0))[1];
+                m_normals_data[i * 9 + 2] = m_normals.get(face.normals.get(0))[2];
+                m_normals_data[i * 9 + 3] = m_normals.get(face.normals.get(1))[0];
+                m_normals_data[i * 9 + 4] = m_normals.get(face.normals.get(1))[1];
+                m_normals_data[i * 9 + 5] = m_normals.get(face.normals.get(1))[2];
+                m_normals_data[i * 9 + 6] = m_normals.get(face.normals.get(2))[0];
+                m_normals_data[i * 9 + 7] = m_normals.get(face.normals.get(2))[1];
+                m_normals_data[i * 9 + 8] = m_normals.get(face.normals.get(2))[2];
             }
 
         if(!m_uvs.isEmpty())
             for(int i = 0; i < m_faces.size(); i++)
             {
                 Face3D face = m_faces.get(i);
-                m_uvs_data[i * 6]     = m_uvs.get(face.uvs.get(0)).x;
-                m_uvs_data[i * 6 + 1] = m_uvs.get(face.uvs.get(0)).y;
-                m_uvs_data[i * 6 + 2] = m_uvs.get(face.uvs.get(1)).x;
-                m_uvs_data[i * 6 + 3] = m_uvs.get(face.uvs.get(1)).y;
-                m_uvs_data[i * 6 + 4] = m_uvs.get(face.uvs.get(2)).x;
-                m_uvs_data[i * 6 + 5] = m_uvs.get(face.uvs.get(2)).y;
+                m_uvs_data[i * 6]     = m_uvs.get(face.uvs.get(0))[0];
+                m_uvs_data[i * 6 + 1] = m_uvs.get(face.uvs.get(0))[1];
+                m_uvs_data[i * 6 + 2] = m_uvs.get(face.uvs.get(1))[0];
+                m_uvs_data[i * 6 + 3] = m_uvs.get(face.uvs.get(1))[1];
+                m_uvs_data[i * 6 + 4] = m_uvs.get(face.uvs.get(2))[0];
+                m_uvs_data[i * 6 + 5] = m_uvs.get(face.uvs.get(2))[1];
             }
 
         for(int i = 0; i < m_faces.size(); i++)
