@@ -2,14 +2,32 @@ package grabasilak.iti.www.myapplication;
 
 import android.content.Context;
 import android.opengl.GLSurfaceView;
-import android.renderscript.Float3;
 
 import java.util.ArrayList;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-import static android.opengl.GLES31.*;
+import static android.opengl.GLES31.GL_BACK;
+import static android.opengl.GLES31.GL_CCW;
+import static android.opengl.GLES31.GL_COLOR_BUFFER_BIT;
+import static android.opengl.GLES31.GL_CULL_FACE;
+import static android.opengl.GLES31.GL_DEPTH_BUFFER_BIT;
+import static android.opengl.GLES31.GL_DEPTH_TEST;
+import static android.opengl.GLES31.GL_DYNAMIC_DRAW;
+import static android.opengl.GLES31.GL_LEQUAL;
+import static android.opengl.GLES31.GL_UNIFORM_BUFFER;
+import static android.opengl.GLES31.glBindBuffer;
+import static android.opengl.GLES31.glBindBufferBase;
+import static android.opengl.GLES31.glBufferData;
+import static android.opengl.GLES31.glClear;
+import static android.opengl.GLES31.glClearColor;
+import static android.opengl.GLES31.glClearDepthf;
+import static android.opengl.GLES31.glCullFace;
+import static android.opengl.GLES31.glDepthFunc;
+import static android.opengl.GLES31.glEnable;
+import static android.opengl.GLES31.glFrontFace;
+import static android.opengl.GLES31.glGenBuffers;
 import static grabasilak.iti.www.myapplication.Util.m_theta;
 
 class MyGLRenderer implements GLSurfaceView.Renderer {
@@ -124,34 +142,42 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
 
         // Update Axis-Aligned Bounding Box since a new mesh has been added
         {
-            m_aabb.m_min.x = Math.min(m_aabb.m_min.x, new_mesh.m_aabb.m_min.x );
-            m_aabb.m_min.y = Math.min(m_aabb.m_min.y, new_mesh.m_aabb.m_min.y );
-            m_aabb.m_min.z = Math.min(m_aabb.m_min.z, new_mesh.m_aabb.m_min.z );
+            m_aabb.m_min[0] = Math.min(m_aabb.m_min[0], new_mesh.m_aabb.m_min[0]);
+            m_aabb.m_min[1] = Math.min(m_aabb.m_min[1], new_mesh.m_aabb.m_min[1]);
+            m_aabb.m_min[2] = Math.min(m_aabb.m_min[2], new_mesh.m_aabb.m_min[2]);
 
-            m_aabb.m_max.x = Math.max(m_aabb.m_max.x, new_mesh.m_aabb.m_max.x );
-            m_aabb.m_max.y = Math.max(m_aabb.m_max.y, new_mesh.m_aabb.m_max.y );
-            m_aabb.m_max.z = Math.max(m_aabb.m_max.z, new_mesh.m_aabb.m_max.z );
+            m_aabb.m_max[0] = Math.max(m_aabb.m_max[0], new_mesh.m_aabb.m_max[0]);
+            m_aabb.m_max[1] = Math.max(m_aabb.m_max[1], new_mesh.m_aabb.m_max[1]);
+            m_aabb.m_max[2] = Math.max(m_aabb.m_max[2], new_mesh.m_aabb.m_max[2]);
         }
         m_aabb.computeCenter();
         m_aabb.computeRadius();
 
-        float dis = ((Math.max(Math.abs(m_aabb.m_max.x - m_aabb.m_min.x), Math.abs(m_aabb.m_max.z - m_aabb.m_min.z))) / m_theta) + 0.001f;
+        float dis = ((Math.max(Math.abs(m_aabb.m_max[0] - m_aabb.m_min[0]), Math.abs(m_aabb.m_max[2] - m_aabb.m_min[2]))) / m_theta) + 0.001f;
 
         if(align_to_aabb)
         {
             // Update Camera
-            m_camera.m_eye.x    = m_aabb.m_center.x + dis;
-            m_camera.m_eye.y    = m_aabb.m_center.y + dis;
-            m_camera.m_eye.z    = m_aabb.m_center.z + dis;
-            m_camera.m_target   = new Float3(m_aabb.m_center.x, m_aabb.m_center.y, m_aabb.m_center.z);
+            m_camera.m_eye[0]   = m_aabb.m_center[0] + dis;
+            m_camera.m_eye[1]   = m_aabb.m_center[1] + dis;
+            m_camera.m_eye[2]   = m_aabb.m_center[2] + dis;
+
+            m_camera.m_target[0]= m_aabb.m_center[0];
+            m_camera.m_target[1]= m_aabb.m_center[1];
+            m_camera.m_target[2]= m_aabb.m_center[2];
 
             // Update Light
-            m_light.m_camera.m_eye.x   = m_aabb.m_center.x + dis;
-            m_light.m_camera.m_eye.y   = m_aabb.m_center.y + dis;
-            m_light.m_camera.m_eye.z   = m_aabb.m_center.z + dis;
-            m_light.m_camera.m_target  = m_aabb.m_center;
+            m_light.m_camera.m_eye[0]     = m_aabb.m_center[0] + dis;
+            m_light.m_camera.m_eye[1]     = m_aabb.m_center[1] + dis;
+            m_light.m_camera.m_eye[2]     = m_aabb.m_center[2] + dis;
 
-            m_light.m_initial_position = new Float3(m_light.m_camera.m_eye.x, m_light.m_camera.m_eye.y, m_light.m_camera.m_eye.z);
+            m_light.m_camera.m_target[0]  = m_aabb.m_center[0];
+            m_light.m_camera.m_target[1]  = m_aabb.m_center[1];
+            m_light.m_camera.m_target[2]  = m_aabb.m_center[2];
+
+            m_light.m_initial_position[0] = m_light.m_camera.m_eye[0];
+            m_light.m_initial_position[1] = m_light.m_camera.m_eye[1];
+            m_light.m_initial_position[2] = m_light.m_camera.m_eye[2];
             m_light.createUBO();
         }
     }

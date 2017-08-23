@@ -151,7 +151,7 @@ class Mesh {
             glUniform1i(glGetUniformLocation(program, "uniform_textures.emission")      , 3);
             glUniform1i(glGetUniformLocation(program, "uniform_textures.shadow_map")    , 4);
 
-            glProgramUniform3f(program, glGetUniformLocation(program, "uniform_camera.position_wcs"), camera.m_eye.x, camera.m_eye.y, camera.m_eye.z);
+            glProgramUniform3f(program, glGetUniformLocation(program, "uniform_camera.position_wcs"), camera.m_eye[0], camera.m_eye[1], camera.m_eye[2]);
 
             // 3. SET UBOs
 
@@ -313,13 +313,13 @@ class Mesh {
                     Float3 vertex = new Float3(Float.parseFloat(Blocks[1]), Float.parseFloat(Blocks[2]), Float.parseFloat(Blocks[3]));
                     m_vertices.add(vertex);
 
-                    m_aabb.m_min.x = Math.min(m_aabb.m_min.x, vertex.x);
-                    m_aabb.m_min.y = Math.min(m_aabb.m_min.y, vertex.y);
-                    m_aabb.m_min.z = Math.min(m_aabb.m_min.z, vertex.z);
+                    m_aabb.m_min[0] = Math.min(m_aabb.m_min[0], vertex.x);
+                    m_aabb.m_min[1] = Math.min(m_aabb.m_min[1], vertex.y);
+                    m_aabb.m_min[2] = Math.min(m_aabb.m_min[2], vertex.z);
 
-                    m_aabb.m_max.x = Math.max(m_aabb.m_max.x, vertex.x);
-                    m_aabb.m_max.y = Math.max(m_aabb.m_max.y, vertex.y);
-                    m_aabb.m_max.z = Math.max(m_aabb.m_max.z, vertex.z);
+                    m_aabb.m_max[0] = Math.max(m_aabb.m_max[0], vertex.x);
+                    m_aabb.m_max[1] = Math.max(m_aabb.m_max[1], vertex.y);
+                    m_aabb.m_max[2] = Math.max(m_aabb.m_max[2], vertex.z);
 
                     // Log.d("VERTEX DATA", " " + vertex.x + ", " + vertex.y + ", " + vertex.z);
                     break;

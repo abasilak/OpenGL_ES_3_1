@@ -90,9 +90,9 @@ class MyGLSurfaceView extends GLSurfaceView
 
                         dz = z - mPreviousZ;
                         if(dz > 0)
-                            m_renderer.m_camera.m_eye.z += TOUCH_SCALE_FACTOR_Z;
+                            m_renderer.m_camera.m_eye[2] += TOUCH_SCALE_FACTOR_Z;
                         else
-                            m_renderer.m_camera.m_eye.z -= TOUCH_SCALE_FACTOR_Z;
+                            m_renderer.m_camera.m_eye[2] -= TOUCH_SCALE_FACTOR_Z;
                     }
                     else
                     {
@@ -102,8 +102,8 @@ class MyGLSurfaceView extends GLSurfaceView
                         float TOUCH_SCALE_FACTOR_X = m_renderer.m_aabb.m_radius*0.005f;
                         float TOUCH_SCALE_FACTOR_Y = m_renderer.m_aabb.m_radius*0.005f;
 
-                        m_renderer.m_camera.m_target.x -= dx * TOUCH_SCALE_FACTOR_X;
-                        m_renderer.m_camera.m_target.y += dy * TOUCH_SCALE_FACTOR_Y;
+                        m_renderer.m_camera.m_target[0] -= dx * TOUCH_SCALE_FACTOR_X;
+                        m_renderer.m_camera.m_target[1] += dy * TOUCH_SCALE_FACTOR_Y;
                     }
                 }
                 requestRender();
