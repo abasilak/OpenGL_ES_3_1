@@ -35,4 +35,10 @@ class FPS {
         m_fps = FPS_FACTOR / (m_end_time - m_start_time);
         //Log.i("onDrawFrame", "FPS: " + m_fps);
     }
+
+    float get()
+    {
+        return m_fps;
+    }
+
 }

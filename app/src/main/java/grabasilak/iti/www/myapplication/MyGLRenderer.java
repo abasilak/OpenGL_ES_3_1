@@ -1,32 +1,31 @@
 package grabasilak.iti.www.myapplication;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.opengl.GLES20;
+import android.opengl.GLES31;
 import android.opengl.GLSurfaceView;
+import android.opengl.GLUtils;
+import android.util.Log;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-import static android.opengl.GLES31.GL_BACK;
-import static android.opengl.GLES31.GL_CCW;
 import static android.opengl.GLES31.GL_COLOR_BUFFER_BIT;
-import static android.opengl.GLES31.GL_CULL_FACE;
 import static android.opengl.GLES31.GL_DEPTH_BUFFER_BIT;
-import static android.opengl.GLES31.GL_DEPTH_TEST;
 import static android.opengl.GLES31.GL_DYNAMIC_DRAW;
-import static android.opengl.GLES31.GL_LEQUAL;
 import static android.opengl.GLES31.GL_UNIFORM_BUFFER;
 import static android.opengl.GLES31.glBindBuffer;
 import static android.opengl.GLES31.glBindBufferBase;
 import static android.opengl.GLES31.glBufferData;
 import static android.opengl.GLES31.glClear;
 import static android.opengl.GLES31.glClearColor;
-import static android.opengl.GLES31.glClearDepthf;
-import static android.opengl.GLES31.glCullFace;
-import static android.opengl.GLES31.glDepthFunc;
 import static android.opengl.GLES31.glEnable;
-import static android.opengl.GLES31.glFrontFace;
 import static android.opengl.GLES31.glGenBuffers;
 import static grabasilak.iti.www.myapplication.Util.m_theta;
 
@@ -42,6 +41,9 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
 
     private Shader          m_forward_rendering;
     private Shader          m_shadow_rendering;
+    private Shader          m_text_rendering;
+
+    private TextManager     m_text_manager;
 
     private int []          m_ubo_matrices = new int[1];
 
@@ -68,6 +70,7 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         // Load Shaders
         m_forward_rendering = new Shader(m_context,  m_context.getString(R.string.SHADER_FORWARD_NAME));
         m_shadow_rendering  = new Shader(m_context,  m_context.getString(R.string.SHADER_SHADOW_NAME));
+        m_text_rendering    = new Shader(m_context,  m_context.getString(R.string.SHADER_TEXT_RENDERING_NAME));
 
         createUBO();
 
@@ -77,16 +80,18 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
                         m_rendering_settings.m_background_color[2],
                         m_rendering_settings.m_background_color[3]);
 
-        glClearDepthf(m_rendering_settings.m_depth);
+        GLES31.glClearDepthf(m_rendering_settings.m_depth);
 
         // Set Depth Test
-        glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LEQUAL);
+        GLES31.glEnable(GLES31.GL_DEPTH_TEST);
+        GLES31.glDepthFunc(GLES31.GL_LEQUAL);
 
         // Set Culling Test
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
-        glFrontFace(GL_CCW);
+        glEnable(GLES31.GL_CULL_FACE);
+        GLES31.glCullFace(GLES31.GL_BACK);
+        GLES31.glFrontFace(GLES31.GL_CCW);
+
+        SetupText();
 
         RenderingSettings.checkGlError("onSurfaceCreated");
     }
@@ -95,7 +100,7 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
     public void onDrawFrame(GL10 unused)
     {
         // Animate Lights
-        m_light.animation();
+       // m_light.animation();
 
         // Shadow Mapping
         if (m_light.m_is_animated)
@@ -123,6 +128,11 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         m_rendering_settings.m_fps.end();
         m_rendering_settings.m_fps.compute();
         m_rendering_settings.m_fps.reset();
+
+        // Add it to our manager
+        m_text_manager.addText(new TextObject("FPS: " + String.format("%.2f", m_rendering_settings.m_fps.get()), 50, m_rendering_settings.m_viewport.m_height-50));
+        m_text_manager.PrepareDraw();
+        m_text_manager.Draw(m_text_rendering.getProgram(), m_rendering_settings.m_viewport.m_width, m_rendering_settings.m_viewport.m_height);
     }
 
     // RESIZE FUNCTION
@@ -191,5 +201,37 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         }
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_ubo_matrices[0]);
+    }
+
+    public void SetupText()
+    {
+        // Create our text manager
+        m_text_manager = new TextManager();
+
+        InputStream istr = null;
+        Bitmap bmp = null;
+        try {
+            istr = m_context.getAssets().open("Font/font.png");
+            bmp = BitmapFactory.decodeStream(istr);
+        }
+        catch (IOException e) {
+            // handle exception
+            Log.d("LOADING FILE", "FILE LOADED UNSUCCESSFULLY !");
+        }
+
+        int[] texturenames = new int[1];
+        GLES20.glGenTextures(1, texturenames, 0);
+        GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, texturenames[0]);
+        GLES31.glTexParameteri(GLES31.GL_TEXTURE_2D, GLES31.GL_TEXTURE_MIN_FILTER, GLES31.GL_LINEAR);
+        GLES31.glTexParameteri(GLES31.GL_TEXTURE_2D, GLES31.GL_TEXTURE_MAG_FILTER, GLES31.GL_LINEAR);
+        GLUtils.texImage2D(GLES31.GL_TEXTURE_2D, 0, bmp, 0);
+        GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, 0);
+        bmp.recycle();
+
+        // Tell our text manager to use index 1 of textures loaded
+        m_text_manager.setTextureID(texturenames[0]);
+
+        // Pass the uniform scale
+        m_text_manager.setUniformscale(1);
     }
 }

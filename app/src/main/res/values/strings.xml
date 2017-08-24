@@ -3,4 +3,5 @@
     <string name="MESH_NAME" translatable="false">glass.obj</string>
     <string name="SHADER_FORWARD_NAME" translatable="false">forward_rendering</string>
     <string name="SHADER_SHADOW_NAME" translatable="false">shadow_rendering</string>
+    <string name="SHADER_TEXT_RENDERING_NAME" translatable="false">text_rendering</string>
 </resources>
