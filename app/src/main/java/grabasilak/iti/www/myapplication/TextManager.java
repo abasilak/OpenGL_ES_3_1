@@ -289,9 +289,6 @@ public class TextManager {
 
 	public void Draw(int program, int mScreenWidth, int mScreenHeight)
 	{
-        GLES31.glEnable(GLES31.GL_BLEND);
-        GLES31.glBlendFunc(GLES31.GL_ONE, GLES31.GL_ONE_MINUS_SRC_ALPHA);
-
         // Set the correct shader for our grid object.
 		glUseProgram(program);
 
@@ -323,9 +320,9 @@ public class TextManager {
         }
         glBindVertexArray ( 0 );
 
-        glUseProgram(0);
+        GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, 0);
 
-        GLES31.glDisable(GLES31.GL_BLEND);
+        glUseProgram(0);
 	}
 	
 	private int convertCharToIndex(int c_val)

@@ -24,7 +24,8 @@ public class RenderingSettings {
     public RenderingSettings ()
     {
         m_fps                   = new FPS();
-        m_viewport              = new Viewport(0,0,1024,768);
+        m_viewport              = new Viewport(0,0, 1080, 1920);
+
         m_depth                 = 1.0f;
 
         m_background_color      = new float [4];

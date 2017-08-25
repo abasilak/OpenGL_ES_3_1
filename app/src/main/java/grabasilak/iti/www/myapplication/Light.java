@@ -59,6 +59,7 @@ class Light {
     float []            m_initial_position      = new float[3];
 
     Camera              m_camera;
+
     private FloatBuffer m_light_buffer;
 
     Light()
@@ -68,6 +69,7 @@ class Light {
         m_att_quadratic		    = 0.0032f;
         m_spotlight_cutoff	    = 30.0f;
 
+        m_is_rendered           = true;
         m_is_spotlight          = true;
         m_casts_shadows         = false;
 

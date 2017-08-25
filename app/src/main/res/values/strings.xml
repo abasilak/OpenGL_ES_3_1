@@ -1,7 +1,9 @@
 <resources>
     <string name="APP_TITLE">[OpenGL 3.1][Example]</string>
     <string name="MESH_NAME" translatable="false">glass.obj</string>
-    <string name="SHADER_FORWARD_NAME" translatable="false">forward_rendering</string>
-    <string name="SHADER_SHADOW_NAME" translatable="false">shadow_rendering</string>
+    <string name="SHADER_SIMPLE_RENDERING_NAME" translatable="false">simple_rendering</string>
+    <string name="SHADER_FORWARD_RENDERING_NAME" translatable="false">forward_rendering</string>
+    <string name="SHADER_SHADOW_RENDERING_NAME" translatable="false">shadow_rendering</string>
     <string name="SHADER_TEXT_RENDERING_NAME" translatable="false">text_rendering</string>
+    <string name="SHADER_TEXTURE_COLOR_RENDERING_NAME" translatable="false">texture_color_rendering</string>
 </resources>

@@ -29,6 +29,7 @@ import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 import java.util.ArrayList;
 
+import static android.opengl.GLES20.glUniformMatrix4fv;
 import static android.opengl.GLES31.GL_ARRAY_BUFFER;
 import static android.opengl.GLES31.GL_DEPTH_BUFFER_BIT;
 import static android.opengl.GLES31.GL_DYNAMIC_DRAW;
@@ -109,7 +110,7 @@ class Mesh {
 
     Mesh(Context context, String name)
     {
-        Matrix.setIdentityM(m_model_matrix, 0);
+        setIdentity();
 
         m_aabb              = new AABB();
         m_vertices          = new ArrayList<>();
@@ -125,6 +126,26 @@ class Mesh {
         m_material_buffer   = ByteBuffer.allocateDirect ( m_sizeofM44 * 4).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
 
         readMesh(context, name);
+    }
+
+    void setIdentity()
+    {
+        Matrix.setIdentityM (m_model_matrix, 0);
+    }
+
+    void translate(float tx, float ty, float tz)
+    {
+        Matrix.translateM   (m_model_matrix, 0,     tx, ty, tz);
+    }
+
+    void rotate(float ra, float rx, float ry, float rz)
+    {
+        Matrix.rotateM      (m_model_matrix, 0, ra, rx, ry, rz);
+    }
+
+    void scale(float sx, float sy, float sz)
+    {
+        Matrix.scaleM       (m_model_matrix, 0,     sx, sy, sz);
     }
 
     /**
@@ -222,6 +243,31 @@ class Mesh {
             // bind the depth texture to the active texture unit
             glActiveTexture(GL_TEXTURE4);
             glBindTexture(GL_TEXTURE_2D, light.m_shadow_map_texture[0]);
+
+            // 3. DRAW
+            glBindVertexArray ( m_vao[0] );
+            {
+                glDrawRangeElements(GL_TRIANGLES, 0, m_indices_data.length, m_indices_data.length, GL_UNSIGNED_SHORT, 0);
+            }
+            glBindVertexArray ( 0 );
+        }
+        glUseProgram(0);
+    }
+
+    void drawSimple(int program, Camera camera, Light light, int UBO_Matrices )
+    {
+        float[] mw_matrix   = new float[16];
+        float[] vmw_matrix  = new float[16];
+        float[] pvmw_matrix = new float[16];
+
+        //Matrix.multiplyMM(mw_matrix  , 0, camera.m_world_matrix      , 0, m_model_matrix, 0 );
+        Matrix.multiplyMM(vmw_matrix , 0, camera.m_view_matrix       , 0, m_model_matrix  , 0 );
+        Matrix.multiplyMM(pvmw_matrix, 0, camera.m_projection_matrix , 0, vmw_matrix , 0 );
+
+        // Add program to OpenGL environment
+        glUseProgram(program);
+        {
+            glUniformMatrix4fv(glGetUniformLocation(program, "uniform_mvp"), 1, false, pvmw_matrix, 0);
 
             // 3. DRAW
             glBindVertexArray ( m_vao[0] );
