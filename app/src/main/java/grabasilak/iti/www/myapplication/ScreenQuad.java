@@ -18,7 +18,6 @@ import static android.opengl.GLES20.glBindBuffer;
 import static android.opengl.GLES20.glBindTexture;
 import static android.opengl.GLES20.glBufferData;
 import static android.opengl.GLES20.glClear;
-import static android.opengl.GLES20.glClearDepthf;
 import static android.opengl.GLES20.glDrawArrays;
 import static android.opengl.GLES20.glEnableVertexAttribArray;
 import static android.opengl.GLES20.glGenBuffers;
@@ -30,13 +29,13 @@ import static android.opengl.GLES20.glVertexAttribPointer;
 import static android.opengl.GLES30.glBindVertexArray;
 import static android.opengl.GLES30.glGenVertexArrays;
 
-public class ScreenQuad {
+class ScreenQuad {
 
     private int []        m_vao             = new int[1];
-            Viewport      m_viewport;
+    private Viewport      m_viewport;
     private int		      m_window_percentage;
 
-    int					  m_id;
+    private int			  m_id;
 
     private ArrayList<Shader>              m_shaders            = new ArrayList<>();
     private ArrayList<ArrayList<Integer>>  m_textures_ids       = new ArrayList<>();
@@ -89,17 +88,14 @@ public class ScreenQuad {
         glBindVertexArray(0);
     }
 
-    void drawColor()
+    void    draw()
     {
         m_viewport.setViewport();
 
-        glClearDepthf(1);
         glClear(GL_DEPTH_BUFFER_BIT);
 
         glUseProgram(m_shaders.get(m_id).getProgram());
         {
-            glUniform1i ( glGetUniformLocation (m_shaders.get(m_id).getProgram(), "uniform_texture_color" ), 0);
-
             glBindVertexArray(m_vao[0]);
             {
                 for (int i = 0; i < m_textures_ids.get(m_id).size(); i++)
@@ -114,35 +110,7 @@ public class ScreenQuad {
         glUseProgram(0);
     }
 
-    void drawDepth(float z_near, float z_far)
-    {
-        m_viewport.setViewport();
-
-        glClearDepthf(1);
-        glClear(GL_DEPTH_BUFFER_BIT);
-
-        glUseProgram(m_shaders.get(m_id).getProgram());
-        {
-            glUniform1i ( glGetUniformLocation (m_shaders.get(m_id).getProgram(), "uniform_texture_depth" ), 0);
-            glUniform1f ( glGetUniformLocation (m_shaders.get(m_id).getProgram(), "uniform_z_near" ), z_near);
-            glUniform1f ( glGetUniformLocation (m_shaders.get(m_id).getProgram(), "uniform_z_far" ), z_far);
-
-            glBindVertexArray(m_vao[0]);
-            {
-                for (int i = 0; i < m_textures_ids.get(m_id).size(); i++)
-                {
-                    glActiveTexture(GL_TEXTURE0 + i);
-                    glBindTexture(GL_TEXTURE_2D, m_textures_ids.get(m_id).get(i));
-                }
-                glDrawArrays(GL_TRIANGLES, 0, 6);
-            }
-            glBindVertexArray(0);
-        }
-        glUseProgram(0);
-    }
-
-
-    void setViewport(int width, int height)
+    void    setViewport(int width, int height)
     {
         int left_corner_x  = width - width / m_window_percentage;
         int left_corner_y  = height - height / m_window_percentage;
@@ -152,14 +120,28 @@ public class ScreenQuad {
         m_viewport = new Viewport(left_corner_x, left_corner_y, right_corner_x, right_corner_y);
     }
 
-    void	next				()                  { if (m_id < m_shaders.size() - 1) m_id++; }
-    void	prev				()                  { if (m_id > 0					) m_id--; }
-    String  getTextureString	()                  { return m_textures_strings.get(m_id).get(0); }
-    float   getPercentage		()                  { return m_window_percentage; }
     void	addShader			(Shader		shader) { m_shaders.add(shader); }
     void	addTextureList(ArrayList<Integer> tex_ids, ArrayList<String> tex_strings)
     {
         m_textures_ids.add(tex_ids);
         m_textures_strings.add(tex_strings);
+    }
+    void    setUniformTextures(ArrayList<String> names)
+    {
+        glUseProgram(m_shaders.get(m_id).getProgram());
+        {
+            for (int i = 0; i < m_textures_ids.get(m_id).size(); i++)
+                glUniform1i(glGetUniformLocation(m_shaders.get(m_id).getProgram(), names.get(i)), i);
+        }
+        glUseProgram(0);
+    }
+    void    setUniformFloats(ArrayList<String> names, ArrayList<Float> values)
+    {
+        glUseProgram(m_shaders.get(m_id).getProgram());
+        {
+            for (int i = 0; i < names.size(); i++)
+                glUniform1f(glGetUniformLocation(m_shaders.get(m_id).getProgram(), names.get(i)), values.get(i));
+        }
+        glUseProgram(0);
     }
 }

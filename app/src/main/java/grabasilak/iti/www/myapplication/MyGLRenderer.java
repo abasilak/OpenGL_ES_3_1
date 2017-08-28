@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -134,15 +135,21 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         m_screen_quad_output = new ScreenQuad(1);
         m_screen_quad_output.setViewport    (m_rendering_settings.m_viewport.m_width, m_rendering_settings.m_viewport.m_height);
         m_screen_quad_output.addShader      (m_texture_color_rendering);
-        m_screen_quad_output.addTextureList (new ArrayList<Integer>(Arrays.asList(m_forward_texture_color[0])),
-                                             new ArrayList<String>(Arrays.asList("Final Image")));
+        m_screen_quad_output.addTextureList (new ArrayList<>(Collections.singletonList(m_forward_texture_color[0])),
+                                             new ArrayList<>(Collections.singletonList("Final Image")));
+        m_screen_quad_output.setUniformTextures(new ArrayList<>(Collections.singletonList("uniform_texture_color")));
 
         m_screen_quad_debug = new ScreenQuad(8);
         m_screen_quad_debug.setViewport    (m_rendering_settings.m_viewport.m_width, m_rendering_settings.m_viewport.m_height);
         m_screen_quad_debug.addShader      (m_texture_depth_rendering);
         m_screen_quad_debug.addTextureList (
-                new ArrayList<Integer>(Arrays.asList(m_light.m_shadow_map_texture_depth[0])),
-                new ArrayList<String>(Arrays.asList("Shadow Map")));
+                new ArrayList<>(Collections.singletonList(m_light.m_shadow_map_texture_depth[0])),
+                new ArrayList<>(Collections.singletonList("Shadow Map")));
+        m_screen_quad_output.setUniformTextures(new ArrayList<>(Collections.singletonList("uniform_texture_depth")));
+        m_screen_quad_output.setUniformFloats(
+                new ArrayList<>(Arrays.asList("uniform_z_near", "uniform_z_far")), new ArrayList<>(Arrays.asList(m_light.m_camera.m_near_field, m_light.m_camera.m_far_field)));
+
+        SetupText();
 
         // Set the background frame color
         glClearColor(   m_rendering_settings.m_background_color[0],
@@ -160,8 +167,6 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
         glFrontFace(GL_CCW);
-
-        SetupText();
 
         RenderingSettings.checkGlError("onSurfaceCreated");
     }
@@ -235,8 +240,8 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
 
         // Final Quad Rendering
         {
-           m_screen_quad_output.drawColor();
-           m_screen_quad_debug.drawDepth(m_light.m_camera.m_near_field, m_light.m_camera.m_far_field);
+           m_screen_quad_output.draw();
+           m_screen_quad_debug.draw();
         }
     }
 
@@ -300,7 +305,7 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         }
     }
 
-    boolean createFBO()
+    private boolean createFBO()
     {
         // Texture Depth
         glGenTextures(1, m_forward_texture_depth, 0);
@@ -351,12 +356,12 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_ubo_matrices[0]);
     }
 
-    public void SetupText()
+    private void SetupText()
     {
         // Create our text manager
         m_text_manager = new TextManager();
 
-        InputStream istr = null;
+        InputStream istr;
         Bitmap bmp = null;
         try {
             istr = m_context.getAssets().open("Font/font.png");
@@ -370,10 +375,13 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         int[] texturenames = new int[1];
         glGenTextures(1, texturenames, 0);
         glBindTexture(GL_TEXTURE_2D, texturenames[0]);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GLES31.GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GLES31.GL_LINEAR);
-        GLUtils.texImage2D(GL_TEXTURE_2D, 0, bmp, 0);
-        glBindTexture(GL_TEXTURE_2D, 0);
+        {
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GLES31.GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GLES31.GL_LINEAR);
+            GLUtils.texImage2D(GL_TEXTURE_2D, 0, bmp, 0);
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+        assert bmp != null;
         bmp.recycle();
 
         // Tell our text manager to use index 1 of textures loaded
