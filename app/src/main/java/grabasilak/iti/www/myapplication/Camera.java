@@ -16,8 +16,8 @@ class Camera {
     private float[] m_up         = new float[3];
 
             float   m_fov;
-    private float   m_near_field;
-    private float   m_far_field;
+            float   m_near_field;
+            float   m_far_field;
 
     Camera ()
     {
@@ -36,8 +36,8 @@ class Camera {
         m_up[1] = 1.0f;
         m_up[2] = 0.0f;
 
-        m_near_field = 1.0f;
-        m_far_field  = 1000.0f;
+        m_near_field = 0.1f;
+        m_far_field  = 100.0f;
         m_fov        = 30.0f;
     }
 

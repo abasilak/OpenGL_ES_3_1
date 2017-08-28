@@ -3,15 +3,16 @@
 precision mediump int;
 precision mediump float;
 
-#define SHADOW_MAPPING
-//#define SHADOW_EARLY_BAILING
-//#define SHADOW_NUM_SAMPLES_EARLY	4
+#define SHADOW_NUM_SAMPLES_EARLY	4
 #define SHADOW_NUM_SAMPLES			16
-#define SHADOW_DEPTH_BIAS			0.0005f
+#define SHADOW_DEPTH_BIAS			0.001f
 #define SHADOW_CONSTANT_BIAS
+
 //#define SHADOW_PCF
-//#define SHADOW_POISSON_SAMPLING
-//#define SHADOW_STRATIFIED_SAMPLING
+#define SHADOW_POISSON_SAMPLING
+#define SHADOW_STRATIFIED_SAMPLING
+#define SHADOW_MAPPING
+#define SHADOW_EARLY_BAILING
 
 #define POINT_LIGHT_LINEAR_ATT
 
@@ -25,7 +26,6 @@ in VS_OUT
 	vec3 normal_wcs_v;		// the normal
 	vec2 texcoord_v;		// the texture coordinates
 } fs_in;
-
 
 // UNIFORM
 struct Camera

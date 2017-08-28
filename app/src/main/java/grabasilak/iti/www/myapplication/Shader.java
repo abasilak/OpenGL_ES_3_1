@@ -24,29 +24,17 @@ import java.io.InputStream;
 
 import static android.opengl.GLES31.*;
 
-/**
- * A two-dimensional square for use as a drawn object in OpenGL ES 3.1.
- */
 class Shader {
 
     private final String    m_name;
     private int             m_program;
 
-    /**
-     * Sets up the drawing object data for use in an OpenGL ES context.
-     */
     Shader(Context context, String name) {
 
         m_name = name;
         loadProgram(context);
     }
 
-    /**
-     *
-     * @param context Application context
-     * @param fileName Name of shader file
-     * @return A String object containing shader source, otherwise null
-     */
     private static String readShader (Context context, String fileName )
     {
         String shaderSource = null;
@@ -140,16 +128,6 @@ class Shader {
         return m_program;
     }
 
-    /**
-     * Utility method for compiling a OpenGL shader.
-     *
-     * <p><strong>Note:</strong> When developing shaders, use the checkGlError()
-     * method to debug shader coding errors.</p>
-     *
-     * @param type - Vertex or fragment shader type.
-     * @param shaderCode - String containing the shader code.
-     * @return - Returns an id for the shader.
-     */
     private int loadShader(int type, String shaderCode){
 
         // read shader...

@@ -18,6 +18,7 @@ import javax.microedition.khronos.opengles.GL10;
 
 import static android.opengl.GLES10.glCullFace;
 import static android.opengl.GLES20.GL_BACK;
+import static android.opengl.GLES20.GL_BLEND;
 import static android.opengl.GLES20.GL_CCW;
 import static android.opengl.GLES20.GL_CLAMP_TO_EDGE;
 import static android.opengl.GLES20.GL_COLOR_ATTACHMENT0;
@@ -26,9 +27,11 @@ import static android.opengl.GLES20.GL_CULL_FACE;
 import static android.opengl.GLES20.GL_DEPTH_ATTACHMENT;
 import static android.opengl.GLES20.GL_DEPTH_BUFFER_BIT;
 import static android.opengl.GLES20.GL_DEPTH_COMPONENT;
-import static android.opengl.GLES20.GL_FLOAT;
+import static android.opengl.GLES20.GL_DEPTH_COMPONENT16;
 import static android.opengl.GLES20.GL_FRAMEBUFFER;
 import static android.opengl.GLES20.GL_NEAREST;
+import static android.opengl.GLES20.GL_ONE;
+import static android.opengl.GLES20.GL_ONE_MINUS_SRC_ALPHA;
 import static android.opengl.GLES20.GL_RGBA;
 import static android.opengl.GLES20.GL_TEXTURE_2D;
 import static android.opengl.GLES20.GL_TEXTURE_MAG_FILTER;
@@ -36,17 +39,21 @@ import static android.opengl.GLES20.GL_TEXTURE_MIN_FILTER;
 import static android.opengl.GLES20.GL_TEXTURE_WRAP_S;
 import static android.opengl.GLES20.GL_TEXTURE_WRAP_T;
 import static android.opengl.GLES20.GL_UNSIGNED_BYTE;
+import static android.opengl.GLES20.GL_UNSIGNED_INT;
 import static android.opengl.GLES20.glBindFramebuffer;
 import static android.opengl.GLES20.glBindTexture;
+import static android.opengl.GLES20.glBlendFunc;
 import static android.opengl.GLES20.glClear;
+import static android.opengl.GLES20.glColorMask;
 import static android.opengl.GLES20.glDepthMask;
+import static android.opengl.GLES20.glDisable;
 import static android.opengl.GLES20.glFramebufferTexture2D;
 import static android.opengl.GLES20.glFrontFace;
 import static android.opengl.GLES20.glGenFramebuffers;
 import static android.opengl.GLES20.glGenTextures;
 import static android.opengl.GLES20.glTexImage2D;
 import static android.opengl.GLES20.glTexParameteri;
-import static android.opengl.GLES30.GL_DEPTH_COMPONENT32F;
+import static android.opengl.GLES30.GL_SRGB8_ALPHA8;
 import static android.opengl.GLES30.glDrawBuffers;
 import static android.opengl.GLES31.GL_DEPTH_TEST;
 import static android.opengl.GLES31.GL_DYNAMIC_DRAW;
@@ -78,6 +85,7 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
     private Shader          m_shadow_rendering;
     private Shader          m_text_rendering;
     private Shader          m_texture_color_rendering;
+    private Shader          m_texture_depth_rendering;
 
     // Forward Rendering
     private int []		m_forward_fbo           = new int[1];
@@ -87,6 +95,7 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
     private TextManager     m_text_manager;
 
     private ScreenQuad		m_screen_quad_output;
+    private ScreenQuad		m_screen_quad_debug;
 
     private int []          m_ubo_matrices = new int[1];
 
@@ -120,12 +129,20 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         m_shadow_rendering  = new Shader(m_context,  m_context.getString(R.string.SHADER_SHADOW_RENDERING_NAME));
         m_text_rendering    = new Shader(m_context,  m_context.getString(R.string.SHADER_TEXT_RENDERING_NAME));
         m_texture_color_rendering = new Shader(m_context, m_context.getString(R.string.SHADER_TEXTURE_COLOR_RENDERING_NAME));
+        m_texture_depth_rendering = new Shader(m_context, m_context.getString(R.string.SHADER_TEXTURE_DEPTH_RENDERING_NAME));
 
         m_screen_quad_output = new ScreenQuad(1);
         m_screen_quad_output.setViewport    (m_rendering_settings.m_viewport.m_width, m_rendering_settings.m_viewport.m_height);
         m_screen_quad_output.addShader      (m_texture_color_rendering);
         m_screen_quad_output.addTextureList (new ArrayList<Integer>(Arrays.asList(m_forward_texture_color[0])),
                                              new ArrayList<String>(Arrays.asList("Final Image")));
+
+        m_screen_quad_debug = new ScreenQuad(8);
+        m_screen_quad_debug.setViewport    (m_rendering_settings.m_viewport.m_width, m_rendering_settings.m_viewport.m_height);
+        m_screen_quad_debug.addShader      (m_texture_depth_rendering);
+        m_screen_quad_debug.addTextureList (
+                new ArrayList<Integer>(Arrays.asList(m_light.m_shadow_map_texture_depth[0])),
+                new ArrayList<String>(Arrays.asList("Shadow Map")));
 
         // Set the background frame color
         glClearColor(   m_rendering_settings.m_background_color[0],
@@ -159,19 +176,28 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         if (m_light.m_is_animated)
         {
             m_light.m_is_animated = false;
-//            for (int i = 0; i < m_meshes.size(); i++)
-  //              m_meshes.get(i).drawSceneToShadowFBO(m_shadow_rendering.getProgram(), m_light);
+
+            m_light.m_shadow_map_viewport.setViewport();
+            glBindFramebuffer(GL_FRAMEBUFFER, m_light.m_shadow_map_fbo[0]);
+            {
+                glClear(GL_DEPTH_BUFFER_BIT);
+                glColorMask(false, false, false, false);
+
+                m_light.m_camera.computeViewMatrix();
+                for (int i = 0; i < m_meshes.size(); i++)
+                    m_meshes.get(i).drawSimple(m_shadow_rendering.getProgram(), m_light.m_camera);
+
+                glColorMask(true, true, true, true);
+            }
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }
 
         m_rendering_settings.m_viewport.setViewport();
-
         glBindFramebuffer(GL_FRAMEBUFFER, m_forward_fbo[0]);
-        glDrawBuffers(1, new int[]{GL_COLOR_ATTACHMENT0}, 0);
-
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        if(m_meshes.size()>0)
         {
+            glDrawBuffers(1, new int[]{GL_COLOR_ATTACHMENT0}, 0);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
             m_camera.computeWorldMatrix();
             m_camera.computeViewMatrix();
 
@@ -184,44 +210,46 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
                 glDepthMask(false);
                 {
                     m_sphere.setIdentity();
-                    m_sphere.translate(m_light.m_camera.m_eye[0],m_light.m_camera.m_eye[1],m_light.m_camera.m_eye[2]);
-                    m_sphere.scale(m_aabb.m_radius/10f,m_aabb.m_radius/10f,m_aabb.m_radius/10f);
-                    m_sphere.drawSimple(m_simple_rendering.getProgram(), m_camera, m_light, m_ubo_matrices[0]);
+                    m_sphere.translate(m_light.m_camera.m_eye[0], m_light.m_camera.m_eye[1], m_light.m_camera.m_eye[2]);
+                    m_sphere.scale(m_aabb.m_radius / 10f, m_aabb.m_radius / 10f, m_aabb.m_radius / 10f);
+                    m_sphere.drawSimple(m_simple_rendering.getProgram(), m_camera);
                 }
                 glDepthMask(true);
             }
+
+            // Get the amount of time the last frame took.
+            m_rendering_settings.m_fps.end();
+            m_rendering_settings.m_fps.compute();
+            m_rendering_settings.m_fps.reset();
+
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+            {
+                m_text_manager.addText(new TextObject("Forward Rendering: " + String.format("%.2f", m_rendering_settings.m_fps.getTime()), 50, m_rendering_settings.m_viewport.m_height - 50));
+                m_text_manager.PrepareDraw();
+                m_text_manager.Draw(m_text_rendering.getProgram(), m_rendering_settings.m_viewport.m_width, m_rendering_settings.m_viewport.m_height);
+            }
+            glDisable(GL_BLEND);
         }
-
-        // Get the amount of time the last frame took.
-        m_rendering_settings.m_fps.end();
-        m_rendering_settings.m_fps.compute();
-        m_rendering_settings.m_fps.reset();
-
-        GLES31.glEnable(GLES31.GL_BLEND);
-        GLES31.glBlendFunc(GLES31.GL_ONE, GLES31.GL_ONE_MINUS_SRC_ALPHA);
-        {
-            m_text_manager.addText(new TextObject("FPS: " + String.format("%.2f", m_rendering_settings.m_fps.get()), 50, m_rendering_settings.m_viewport.m_height - 50));
-            m_text_manager.PrepareDraw();
-            m_text_manager.Draw(m_text_rendering.getProgram(), m_rendering_settings.m_viewport.m_width, m_rendering_settings.m_viewport.m_height);
-        }
-        GLES31.glDisable(GLES31.GL_BLEND);
-
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         // Final Quad Rendering
         {
-           m_screen_quad_output.draw();
+           m_screen_quad_output.drawColor();
+           m_screen_quad_debug.drawDepth(m_light.m_camera.m_near_field, m_light.m_camera.m_far_field);
         }
     }
 
     // RESIZE FUNCTION
     public void onSurfaceChanged(GL10 unused, int width, int height) {
-
-        m_screen_quad_output.m_viewport.setViewport(width, height);
         m_rendering_settings.m_viewport.setViewport(width, height);
         m_rendering_settings.m_viewport.setAspectRatio();
 
+        m_screen_quad_output.setViewport(width, height);
+        m_screen_quad_debug.setViewport(width, height);
+
         m_camera.computeProjectionMatrix(m_rendering_settings.m_viewport.getAspectRatio());
+        m_light.m_camera.computeProjectionMatrix(m_light.m_shadow_map_viewport.getAspectRatio());
     }
 
     private void addMesh(String fileName, boolean align_to_aabb)
@@ -257,9 +285,9 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
             m_camera.m_target[2]= m_aabb.m_center[2];
 
             // Update Light
-            m_light.m_camera.m_eye[0]     = m_aabb.m_center[0] + dis/4f;
-            m_light.m_camera.m_eye[1]     = m_aabb.m_center[1] + dis/4f;
-            m_light.m_camera.m_eye[2]     = m_aabb.m_center[2] + dis/4f;
+            m_light.m_camera.m_eye[0]     = m_aabb.m_center[0] + dis/2;
+            m_light.m_camera.m_eye[1]     = m_aabb.m_center[1] + dis/2;
+            m_light.m_camera.m_eye[2]     = m_aabb.m_center[2] + dis/2;
 
             m_light.m_camera.m_target[0]  = m_aabb.m_center[0];
             m_light.m_camera.m_target[1]  = m_aabb.m_center[1];
@@ -278,7 +306,7 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         glGenTextures(1, m_forward_texture_depth, 0);
         glBindTexture(GL_TEXTURE_2D, m_forward_texture_depth[0]);
         {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, m_rendering_settings.m_viewport.m_width, m_rendering_settings.m_viewport.m_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, null);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, m_rendering_settings.m_viewport.m_width, m_rendering_settings.m_viewport.m_height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, null);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -286,10 +314,11 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         }
         glBindTexture(GL_TEXTURE_2D, 0);
 
+        // Texture Color
         glGenTextures(1, m_forward_texture_color, 0);
         glBindTexture(GL_TEXTURE_2D, m_forward_texture_color[0]);
         {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_rendering_settings.m_viewport.m_width, m_rendering_settings.m_viewport.m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, null);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, m_rendering_settings.m_viewport.m_width, m_rendering_settings.m_viewport.m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, null);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);

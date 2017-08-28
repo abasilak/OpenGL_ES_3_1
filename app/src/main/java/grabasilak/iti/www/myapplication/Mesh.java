@@ -31,11 +31,9 @@ import java.util.ArrayList;
 
 import static android.opengl.GLES20.glUniformMatrix4fv;
 import static android.opengl.GLES31.GL_ARRAY_BUFFER;
-import static android.opengl.GLES31.GL_DEPTH_BUFFER_BIT;
 import static android.opengl.GLES31.GL_DYNAMIC_DRAW;
 import static android.opengl.GLES31.GL_ELEMENT_ARRAY_BUFFER;
 import static android.opengl.GLES31.GL_FLOAT;
-import static android.opengl.GLES31.GL_FRAMEBUFFER;
 import static android.opengl.GLES31.GL_STATIC_DRAW;
 import static android.opengl.GLES31.GL_TEXTURE4;
 import static android.opengl.GLES31.GL_TEXTURE_2D;
@@ -45,14 +43,10 @@ import static android.opengl.GLES31.GL_UNSIGNED_SHORT;
 import static android.opengl.GLES31.glActiveTexture;
 import static android.opengl.GLES31.glBindBuffer;
 import static android.opengl.GLES31.glBindBufferBase;
-import static android.opengl.GLES31.glBindFramebuffer;
 import static android.opengl.GLES31.glBindTexture;
 import static android.opengl.GLES31.glBindVertexArray;
 import static android.opengl.GLES31.glBufferData;
 import static android.opengl.GLES31.glBufferSubData;
-import static android.opengl.GLES31.glClear;
-import static android.opengl.GLES31.glClearDepthf;
-import static android.opengl.GLES31.glColorMask;
 import static android.opengl.GLES31.glDrawRangeElements;
 import static android.opengl.GLES31.glEnableVertexAttribArray;
 import static android.opengl.GLES31.glGenBuffers;
@@ -60,7 +54,6 @@ import static android.opengl.GLES31.glGenVertexArrays;
 import static android.opengl.GLES31.glGetUniformBlockIndex;
 import static android.opengl.GLES31.glGetUniformLocation;
 import static android.opengl.GLES31.glProgramUniform3f;
-import static android.opengl.GLES31.glProgramUniformMatrix4fv;
 import static android.opengl.GLES31.glUniform1i;
 import static android.opengl.GLES31.glUniformBlockBinding;
 import static android.opengl.GLES31.glUseProgram;
@@ -110,8 +103,6 @@ class Mesh {
 
     Mesh(Context context, String name)
     {
-        setIdentity();
-
         m_aabb              = new AABB();
         m_vertices          = new ArrayList<>();
         m_normals           = new ArrayList<>();
@@ -124,6 +115,8 @@ class Mesh {
         n_matrix_buffer     = ByteBuffer.allocateDirect ( m_sizeofM44    ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
         l_matrix_buffer     = ByteBuffer.allocateDirect ( m_sizeofM44    ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
         m_material_buffer   = ByteBuffer.allocateDirect ( m_sizeofM44 * 4).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
+
+        setIdentity();
 
         readMesh(context, name);
     }
@@ -242,7 +235,7 @@ class Mesh {
 
             // bind the depth texture to the active texture unit
             glActiveTexture(GL_TEXTURE4);
-            glBindTexture(GL_TEXTURE_2D, light.m_shadow_map_texture[0]);
+            glBindTexture(GL_TEXTURE_2D, light.m_shadow_map_texture_depth[0]);
 
             // 3. DRAW
             glBindVertexArray ( m_vao[0] );
@@ -254,13 +247,11 @@ class Mesh {
         glUseProgram(0);
     }
 
-    void drawSimple(int program, Camera camera, Light light, int UBO_Matrices )
+    void drawSimple(int program, Camera camera)
     {
-        float[] mw_matrix   = new float[16];
         float[] vmw_matrix  = new float[16];
         float[] pvmw_matrix = new float[16];
 
-        //Matrix.multiplyMM(mw_matrix  , 0, camera.m_world_matrix      , 0, m_model_matrix, 0 );
         Matrix.multiplyMM(vmw_matrix , 0, camera.m_view_matrix       , 0, m_model_matrix  , 0 );
         Matrix.multiplyMM(pvmw_matrix, 0, camera.m_projection_matrix , 0, vmw_matrix , 0 );
 
@@ -277,70 +268,6 @@ class Mesh {
             glBindVertexArray ( 0 );
         }
         glUseProgram(0);
-    }
-
-    void drawSceneToShadowFBO(int program, Light light)
-    {
-        glBindFramebuffer(GL_FRAMEBUFFER, light.m_shadow_map_fbo[0]);
-        {
-            light.m_shadow_map_viewport.setViewport();
-            glClearDepthf(1.0f);
-            glClear(GL_DEPTH_BUFFER_BIT);
-
-            // disable color
-            glColorMask(false, false, false, false);
-
-            // Create the light's world to view space matrix
-            // we need to build a "camera" as viewed from the light
-            // so we need an up vector, a target and a light "eye" position
-            // create the direction vector
-            /*vec3 light_direction = normalize(m_camera->m_target - m_camera->m_eye);
-
-            // this check is simply a sanity check for the internal cross product in glm::lookAt
-            // just in case the light direction vector is 0,1,0
-            // if it is, the up vector is setto 0,0,1
-            if (fabs(light_direction.z) < 0.001f && fabs(light_direction.x) < 0.001f)
-                m_camera->m_up = vec3(0, 0, 1);
-            else
-                m_camera->m_up = vec3(0, 1, 0);*/
-
-            // construct the light view matrix that transforms world space to light view space (WCS -> LCS)
-            // LCS is the view space of the light, similar to ECS which is the view space for the camera
-            light.m_camera.computeViewMatrix();
-
-            //float h = spotlight->m_near_range *glm::tan(glm::radians(spotlight->m_aperture * 0.5f));
-            //glm::mat4x4 light_projection_matrix = glm::frustum(-h, h, -h, h, spotlight->m_near_range, spotlight->m_far_range);
-            // aspect ratio is 1 since both width and height are the same (dimensions of the texture)
-            light.m_camera.computeProjectionMatrix(light.m_shadow_map_viewport.m_aspect_ratio);
-
-            // now draw the scene as usual
-            {
-                float[] mw_matrix  = new float[16];
-                float[] mv_matrix  = new float[16];
-                float[] mvp_matrix = new float[16];
-
-                Matrix.multiplyMM(mw_matrix , 0, light.m_camera.m_world_matrix      , 0, m_model_matrix, 0 );
-                Matrix.multiplyMM(mv_matrix , 0, light.m_camera.m_view_matrix       , 0, mw_matrix , 0 );
-                Matrix.multiplyMM(mvp_matrix, 0, light.m_camera.m_projection_matrix , 0, mv_matrix , 0 );
-
-                // Add program to OpenGL environment
-                glUseProgram(program);
-                {
-                    // 2. SET UNIFORMS
-                    glProgramUniformMatrix4fv(program, glGetUniformLocation(program, "uniform_mvp"), 1, false, mvp_matrix, 0);
-                    // 3. DRAW
-                    glBindVertexArray ( m_vao[0] );
-                    {
-                        glDrawRangeElements(GL_TRIANGLES, 0, m_indices_data.length, m_indices_data.length, GL_UNSIGNED_SHORT, 0);
-                    }
-                    glBindVertexArray ( 0 );
-                }
-                glUseProgram(0);
-            }
-            // enable color
-            glColorMask(true, true, true, true);
-        }
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
     private boolean readMesh(Context context, String name) {

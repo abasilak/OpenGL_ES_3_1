@@ -7,6 +7,7 @@ class FPS {
     private final float     FPS_FACTOR = 1000000000.0f;
 
     private float      m_fps;
+    private float      m_time;
     private long       m_end_time;
     private long       m_start_time;
 
@@ -32,13 +33,16 @@ class FPS {
 
     void compute()
     {
-        m_fps = FPS_FACTOR / (m_end_time - m_start_time);
-        //Log.i("onDrawFrame", "FPS: " + m_fps);
+        m_time = m_end_time - m_start_time;
+        m_fps = FPS_FACTOR / m_time;
     }
 
-    float get()
+    float getFPS()
     {
         return m_fps;
     }
-
+    float getTime()
+    {
+        return m_time/1000000.0f;
+    }
 }

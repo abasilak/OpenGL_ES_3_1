@@ -53,7 +53,7 @@ class Light {
 
     private final int	m_shadow_size           = 1024;
     int	[]		        m_shadow_map_fbo        = new int[1];
-    int	[]		        m_shadow_map_texture    = new int[1];
+    int	[]              m_shadow_map_texture_depth = new int[1];
     final Viewport      m_shadow_map_viewport;
 
     float []            m_initial_position      = new float[3];
@@ -71,16 +71,16 @@ class Light {
 
         m_is_rendered           = true;
         m_is_spotlight          = true;
-        m_casts_shadows         = false;
+        m_casts_shadows         = true;
 
         m_camera                = new Camera();
-        m_camera.m_fov          = 90.0f;
+        m_camera.m_fov          = 60.0f;
 
         m_color[0]              = m_color[1]            = m_color[2]            = 1.0f;
         m_initial_position[0]   = m_initial_position[1] = m_initial_position[2] = 0.0f;
 
         m_shadow_map_viewport   = new Viewport(0, 0, m_shadow_size, m_shadow_size);
-
+        m_shadow_map_viewport.setAspectRatio();
         createShadowFBO();
     }
 
@@ -205,8 +205,8 @@ class Light {
     void createShadowFBO()
     {
         // Create Shadow Texture
-        glGenTextures(1, m_shadow_map_texture, 0);
-        glBindTexture(GL_TEXTURE_2D, m_shadow_map_texture[0]);
+        glGenTextures(1, m_shadow_map_texture_depth, 0);
+        glBindTexture(GL_TEXTURE_2D, m_shadow_map_texture_depth[0]);
         {
             glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, m_shadow_map_viewport.m_width, m_shadow_map_viewport.m_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, null);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -220,7 +220,7 @@ class Light {
         glGenFramebuffers(1, m_shadow_map_fbo, 0);
         glBindFramebuffer(GL_FRAMEBUFFER, m_shadow_map_fbo[0]);
         {
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_shadow_map_texture[0], 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_shadow_map_texture_depth[0], 0);
         }
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 

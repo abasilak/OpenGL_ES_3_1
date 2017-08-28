@@ -6,4 +6,5 @@
     <string name="SHADER_SHADOW_RENDERING_NAME" translatable="false">shadow_rendering</string>
     <string name="SHADER_TEXT_RENDERING_NAME" translatable="false">text_rendering</string>
     <string name="SHADER_TEXTURE_COLOR_RENDERING_NAME" translatable="false">texture_color_rendering</string>
+    <string name="SHADER_TEXTURE_DEPTH_RENDERING_NAME" translatable="false">texture_depth_rendering</string>
 </resources>

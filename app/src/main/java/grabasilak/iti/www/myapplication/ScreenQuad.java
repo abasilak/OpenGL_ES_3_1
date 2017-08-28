@@ -23,6 +23,7 @@ import static android.opengl.GLES20.glDrawArrays;
 import static android.opengl.GLES20.glEnableVertexAttribArray;
 import static android.opengl.GLES20.glGenBuffers;
 import static android.opengl.GLES20.glGetUniformLocation;
+import static android.opengl.GLES20.glUniform1f;
 import static android.opengl.GLES20.glUniform1i;
 import static android.opengl.GLES20.glUseProgram;
 import static android.opengl.GLES20.glVertexAttribPointer;
@@ -88,18 +89,16 @@ public class ScreenQuad {
         glBindVertexArray(0);
     }
 
-    void draw()
+    void drawColor()
     {
-        int program = m_shaders.get(m_id).getProgram();
-
         m_viewport.setViewport();
 
         glClearDepthf(1);
         glClear(GL_DEPTH_BUFFER_BIT);
 
-        glUseProgram(program);
+        glUseProgram(m_shaders.get(m_id).getProgram());
         {
-            glUniform1i ( glGetUniformLocation (program, "uniform_texture_color" ), 0);
+            glUniform1i ( glGetUniformLocation (m_shaders.get(m_id).getProgram(), "uniform_texture_color" ), 0);
 
             glBindVertexArray(m_vao[0]);
             {
@@ -114,6 +113,34 @@ public class ScreenQuad {
         }
         glUseProgram(0);
     }
+
+    void drawDepth(float z_near, float z_far)
+    {
+        m_viewport.setViewport();
+
+        glClearDepthf(1);
+        glClear(GL_DEPTH_BUFFER_BIT);
+
+        glUseProgram(m_shaders.get(m_id).getProgram());
+        {
+            glUniform1i ( glGetUniformLocation (m_shaders.get(m_id).getProgram(), "uniform_texture_depth" ), 0);
+            glUniform1f ( glGetUniformLocation (m_shaders.get(m_id).getProgram(), "uniform_z_near" ), z_near);
+            glUniform1f ( glGetUniformLocation (m_shaders.get(m_id).getProgram(), "uniform_z_far" ), z_far);
+
+            glBindVertexArray(m_vao[0]);
+            {
+                for (int i = 0; i < m_textures_ids.get(m_id).size(); i++)
+                {
+                    glActiveTexture(GL_TEXTURE0 + i);
+                    glBindTexture(GL_TEXTURE_2D, m_textures_ids.get(m_id).get(i));
+                }
+                glDrawArrays(GL_TRIANGLES, 0, 6);
+            }
+            glBindVertexArray(0);
+        }
+        glUseProgram(0);
+    }
+
 
     void setViewport(int width, int height)
     {
