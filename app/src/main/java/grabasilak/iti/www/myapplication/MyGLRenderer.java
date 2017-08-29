@@ -19,44 +19,15 @@ import javax.microedition.khronos.opengles.GL10;
 
 import static android.opengl.GLES10.glCullFace;
 import static android.opengl.GLES20.GL_BACK;
-import static android.opengl.GLES20.GL_BLEND;
 import static android.opengl.GLES20.GL_CCW;
-import static android.opengl.GLES20.GL_CLAMP_TO_EDGE;
-import static android.opengl.GLES20.GL_COLOR_ATTACHMENT0;
-import static android.opengl.GLES20.GL_COLOR_BUFFER_BIT;
 import static android.opengl.GLES20.GL_CULL_FACE;
-import static android.opengl.GLES20.GL_DEPTH_ATTACHMENT;
-import static android.opengl.GLES20.GL_DEPTH_BUFFER_BIT;
-import static android.opengl.GLES20.GL_DEPTH_COMPONENT;
-import static android.opengl.GLES20.GL_DEPTH_COMPONENT16;
-import static android.opengl.GLES20.GL_FRAMEBUFFER;
-import static android.opengl.GLES20.GL_NEAREST;
-import static android.opengl.GLES20.GL_ONE;
-import static android.opengl.GLES20.GL_ONE_MINUS_SRC_ALPHA;
-import static android.opengl.GLES20.GL_RGBA;
 import static android.opengl.GLES20.GL_TEXTURE_2D;
 import static android.opengl.GLES20.GL_TEXTURE_MAG_FILTER;
 import static android.opengl.GLES20.GL_TEXTURE_MIN_FILTER;
-import static android.opengl.GLES20.GL_TEXTURE_WRAP_S;
-import static android.opengl.GLES20.GL_TEXTURE_WRAP_T;
-import static android.opengl.GLES20.GL_UNSIGNED_BYTE;
-import static android.opengl.GLES20.GL_UNSIGNED_INT;
-import static android.opengl.GLES20.glBindFramebuffer;
 import static android.opengl.GLES20.glBindTexture;
-import static android.opengl.GLES20.glBlendFunc;
-import static android.opengl.GLES20.glClear;
-import static android.opengl.GLES20.glColorMask;
-import static android.opengl.GLES20.glDepthMask;
-import static android.opengl.GLES20.glDisable;
-import static android.opengl.GLES20.glFramebufferTexture2D;
 import static android.opengl.GLES20.glFrontFace;
-import static android.opengl.GLES20.glGenFramebuffers;
 import static android.opengl.GLES20.glGenTextures;
-import static android.opengl.GLES20.glTexImage2D;
 import static android.opengl.GLES20.glTexParameteri;
-import static android.opengl.GLES30.GL_SRGB8_ALPHA8;
-import static android.opengl.GLES30.glDrawBuffers;
-import static android.opengl.GLES30.glInvalidateFramebuffer;
 import static android.opengl.GLES31.GL_DEPTH_TEST;
 import static android.opengl.GLES31.GL_DYNAMIC_DRAW;
 import static android.opengl.GLES31.GL_LEQUAL;
@@ -73,35 +44,25 @@ import static grabasilak.iti.www.myapplication.Util.m_theta;
 
 class MyGLRenderer implements GLSurfaceView.Renderer {
 
-            AABB            m_aabb;
-            Camera          m_camera;
-    private Light           m_light;
+            AABB                m_aabb;
+            Camera              m_camera;
+    private Light               m_light;
+    private ArrayList<Mesh>     m_meshes;
 
-    private Context         m_context;
+    private Context             m_context;
+    private TextManager         m_text_manager;
 
-    private Mesh            m_sphere;
-    private ArrayList<Mesh> m_meshes;
+    private ForwardRendering    m_rendering_forward;
 
-    private Shader          m_simple_rendering;
-    private Shader          m_forward_rendering;
-    private Shader          m_shadow_rendering;
-    private Shader          m_text_rendering;
-    private Shader          m_texture_color_rendering;
-    private Shader          m_texture_depth_rendering;
+    private Shader              m_shader_color_render;
+    private Shader              m_shader_depth_render;
 
-    // Forward Rendering
-    private int []		m_forward_fbo           = new int[1];
-    private int []		m_forward_texture_depth = new int[1];
-    private int []		m_forward_texture_color = new int[1];
+    private ScreenQuad		    m_screen_quad_output;
+    private ScreenQuad		    m_screen_quad_debug;
 
-    private TextManager     m_text_manager;
+    private RenderingSettings   m_rendering_settings;
 
-    private ScreenQuad		m_screen_quad_output;
-    private ScreenQuad		m_screen_quad_debug;
-
-    private int []          m_ubo_matrices = new int[1];
-
-    private RenderingSettings m_rendering_settings;
+    private int []              m_ubo_matrices = new int[1];
 
     MyGLRenderer(Context context, int width, int height)
     {
@@ -110,46 +71,39 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
     }
 
     // INIT FUNCTION
-    public void onSurfaceCreated(GL10 unused, EGLConfig config) {
+    public void     onSurfaceCreated(GL10 unused, EGLConfig config) {
 
         m_aabb      = new AABB();
-        m_light     = new Light();
-
         m_camera    = new Camera();
         m_meshes    = new ArrayList<>();
+        m_light     = new Light(m_context);
 
-        // Load Meshes
-        m_sphere    = new Mesh(m_context, "sphere.obj");
         addMesh(m_context.getString(R.string.MESH_NAME), true);
 
-        createFBO();
-        createUBO();
+        m_rendering_forward   = new ForwardRendering  (m_context, m_rendering_settings);
 
-        // Load Shaders
-        m_simple_rendering  = new Shader(m_context,  m_context.getString(R.string.SHADER_SIMPLE_RENDERING_NAME));
-        m_forward_rendering = new Shader(m_context,  m_context.getString(R.string.SHADER_FORWARD_RENDERING_NAME));
-        m_shadow_rendering  = new Shader(m_context,  m_context.getString(R.string.SHADER_SHADOW_RENDERING_NAME));
-        m_text_rendering    = new Shader(m_context,  m_context.getString(R.string.SHADER_TEXT_RENDERING_NAME));
-        m_texture_color_rendering = new Shader(m_context, m_context.getString(R.string.SHADER_TEXTURE_COLOR_RENDERING_NAME));
-        m_texture_depth_rendering = new Shader(m_context, m_context.getString(R.string.SHADER_TEXTURE_DEPTH_RENDERING_NAME));
+        m_shader_color_render = new Shader(m_context, m_context.getString(R.string.SHADER_TEXTURE_COLOR_RENDERING_NAME));
+        m_shader_depth_render = new Shader(m_context, m_context.getString(R.string.SHADER_TEXTURE_DEPTH_RENDERING_NAME));
 
         m_screen_quad_output = new ScreenQuad(1);
-        m_screen_quad_output.setViewport    (m_rendering_settings.m_viewport.m_width, m_rendering_settings.m_viewport.m_height);
-        m_screen_quad_output.addShader      (m_texture_color_rendering);
-        m_screen_quad_output.addTextureList (new ArrayList<>(Collections.singletonList(m_forward_texture_color[0])),
-                                             new ArrayList<>(Collections.singletonList("uniform_texture_color")));
-
+        {
+            m_screen_quad_output.setViewport    (m_rendering_settings.m_viewport.m_width, m_rendering_settings.m_viewport.m_height);
+            m_screen_quad_output.addShader      (m_shader_color_render);
+            m_screen_quad_output.addTextureList (new ArrayList<>(Collections.singletonList(m_rendering_forward.m_texture_color[0])),
+                                                 new ArrayList<>(Collections.singletonList("uniform_texture_color")));
+        }
         m_screen_quad_debug = new ScreenQuad(8);
-        m_screen_quad_debug.setViewport    (m_rendering_settings.m_viewport.m_width, m_rendering_settings.m_viewport.m_height);
-        m_screen_quad_debug.addShader      (m_texture_depth_rendering);
-        m_screen_quad_debug.addTextureList (
-                new ArrayList<>(Collections.singletonList(m_light.m_shadow_map_texture_depth[0])),
-                new ArrayList<>(Collections.singletonList("uniform_texture_depth")));
-        m_screen_quad_debug.addUniformFloats(
-                new ArrayList<>(Arrays.asList(m_light.m_camera.m_near_field, m_light.m_camera.m_far_field)),
-                new ArrayList<>(Arrays.asList("uniform_z_near", "uniform_z_far")));
+        {
+            m_screen_quad_debug.setViewport     (m_rendering_settings.m_viewport.m_width, m_rendering_settings.m_viewport.m_height);
+            m_screen_quad_debug.addShader       (m_shader_depth_render);
+            m_screen_quad_debug.addTextureList  (new ArrayList<>(Collections.singletonList(m_light.m_shadow_map_texture_depth[0])),
+                                                 new ArrayList<>(Collections.singletonList("uniform_texture_depth")));
+            m_screen_quad_debug.addUniformFloats(new ArrayList<>(Arrays.asList(m_light.m_camera.m_near_field, m_light.m_camera.m_far_field)),
+                                                 new ArrayList<>(Arrays.asList("uniform_z_near", "uniform_z_far")));
+        }
 
-        SetupText();
+        setupText();
+        createUBO();
 
         // Set the background frame color
         glClearColor(   m_rendering_settings.m_background_color[0],
@@ -172,92 +126,30 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
     }
 
     // DRAW FUNCTION
-    public void onDrawFrame(GL10 unused)
+    public void     onDrawFrame(GL10 unused)
     {
-        // Animate Lights
-        m_light.animation();
-
-        // Shadow Mapping
-        if (m_light.m_is_animated)
+        m_text_manager.clear();
         {
-            m_light.m_is_animated = false;
-
-            m_rendering_settings.m_fps.start();
-
-            m_light.m_shadow_map_viewport.setViewport();
-            glBindFramebuffer(GL_FRAMEBUFFER, m_light.m_shadow_map_fbo[0]);
-            {
-                glClear(GL_DEPTH_BUFFER_BIT);
-                glColorMask(false, false, false, false);
-
-                m_light.m_camera.computeViewMatrix();
-                for (int i = 0; i < m_meshes.size(); i++)
-                    m_meshes.get(i).drawSimple(m_shadow_rendering.getProgram(), m_light.m_camera);
-
-                glColorMask(true, true, true, true);
-            }
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-            m_rendering_settings.m_fps.end();
-            m_rendering_settings.m_fps.compute();
-            m_text_manager.clear();
-            m_text_manager.addText(new TextObject("Shadow: " + String.format("%.2f", m_rendering_settings.m_fps.getTime()), 50, m_rendering_settings.m_viewport.m_height - 50));
+            m_light.animation();
+            m_light.draw(m_rendering_settings, m_text_manager, m_meshes);
         }
-
-        m_rendering_settings.m_fps.start();
-
-        m_rendering_settings.m_viewport.setViewport();
-        glBindFramebuffer(GL_FRAMEBUFFER, m_forward_fbo[0]);
         {
-            glDrawBuffers(1, new int[]{GL_COLOR_ATTACHMENT0}, 0);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
             m_camera.computeWorldMatrix();
             m_camera.computeViewMatrix();
-
-            // Render Meshes
-            for (int i = 0; i < m_meshes.size(); i++)
-                m_meshes.get(i).draw(m_forward_rendering.getProgram(), m_camera, m_light, m_ubo_matrices[0]);
-
-            if (m_light.m_is_rendered)
-            {
-                glDepthMask(false);
-                {
-                    m_sphere.setIdentity();
-                    m_sphere.translate(m_light.m_camera.m_eye[0], m_light.m_camera.m_eye[1], m_light.m_camera.m_eye[2]);
-                    m_sphere.scale(m_aabb.m_radius / 10f, m_aabb.m_radius / 10f, m_aabb.m_radius / 10f);
-                    m_sphere.drawSimple(m_simple_rendering.getProgram(), m_camera);
-                }
-                glDepthMask(true);
-            }
-
-            m_rendering_settings.m_fps.end();
-            m_rendering_settings.m_fps.compute();
-            m_text_manager.addText(new TextObject("Forward: " + String.format("%.2f", m_rendering_settings.m_fps.getTime()), 50, m_rendering_settings.m_viewport.m_height - 100));
-
-            if(m_text_manager.m_enabled)
-            {
-                glEnable(GL_BLEND);
-                glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-                {
-                    m_text_manager.PrepareDraw();
-                    m_text_manager.Draw(m_text_rendering.getProgram(), m_rendering_settings.m_viewport.m_width, m_rendering_settings.m_viewport.m_height);
-                }
-                glDisable(GL_BLEND);
-            }
         }
-        glInvalidateFramebuffer(GL_FRAMEBUFFER, 1, new int[]{GL_DEPTH_ATTACHMENT}, 0 );
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-        // Final Quad Rendering
         {
-           m_screen_quad_output.draw();
-           m_screen_quad_debug.draw();
+            m_rendering_forward.draw(m_rendering_settings, m_text_manager, m_meshes, m_light, m_camera, m_ubo_matrices[0]);
         }
+        {
+            m_screen_quad_output.draw();
+            m_screen_quad_debug.draw();
+        }
+
+        RenderingSettings.checkGlError("onDrawFrame");
     }
 
     // RESIZE FUNCTION
-    public void onSurfaceChanged(GL10 unused, int width, int height) {
+    public void     onSurfaceChanged(GL10 unused, int width, int height) {
         m_rendering_settings.m_viewport.setViewport(width, height);
         m_rendering_settings.m_viewport.setAspectRatio();
 
@@ -265,10 +157,12 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         m_screen_quad_debug.setViewport(width, height);
 
         m_camera.computeProjectionMatrix(m_rendering_settings.m_viewport.getAspectRatio());
-        m_light.m_camera.computeProjectionMatrix(m_light.m_shadow_map_viewport.getAspectRatio());
+        m_light.m_camera.computeProjectionMatrix(m_light.m_viewport.getAspectRatio());
+
+        RenderingSettings.checkGlError("onSurfaceChanged");
     }
 
-    private void addMesh(String fileName, boolean align_to_aabb)
+    private void    addMesh(String fileName, boolean align_to_aabb)
     {
         // Load Mesh
         Mesh new_mesh = new Mesh(m_context, fileName);
@@ -301,6 +195,8 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
             m_camera.m_target[2]= m_aabb.m_center[2];
 
             // Update Light
+            m_light.m_radius = m_aabb.m_radius/10f;
+
             m_light.m_camera.m_eye[0]     = m_aabb.m_center[0] + dis/2;
             m_light.m_camera.m_eye[1]     = m_aabb.m_center[1] + dis/2;
             m_light.m_camera.m_eye[2]     = m_aabb.m_center[2] + dis/2;
@@ -316,47 +212,7 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         }
     }
 
-    private boolean createFBO()
-    {
-        // Texture Depth
-        glGenTextures(1, m_forward_texture_depth, 0);
-        glBindTexture(GL_TEXTURE_2D, m_forward_texture_depth[0]);
-        {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, m_rendering_settings.m_viewport.m_width, m_rendering_settings.m_viewport.m_height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, null);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        }
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        // Texture Color
-        glGenTextures(1, m_forward_texture_color, 0);
-        glBindTexture(GL_TEXTURE_2D, m_forward_texture_color[0]);
-        {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, m_rendering_settings.m_viewport.m_width, m_rendering_settings.m_viewport.m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, null);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        }
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        // FBO
-        glGenFramebuffers(1, m_forward_fbo, 0);
-        glBindFramebuffer(GL_FRAMEBUFFER, m_forward_fbo[0]);
-        {
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_forward_texture_depth[0], 0);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_forward_texture_color[0], 0);
-        }
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-        RenderingSettings.checkFramebufferStatus();
-
-        return true;
-    }
-
-    private void createUBO()
+    private void    createUBO()
     {
         glGenBuffers(1, m_ubo_matrices, 0);
         glBindBuffer(GL_UNIFORM_BUFFER, m_ubo_matrices[0]);
@@ -367,10 +223,10 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_ubo_matrices[0]);
     }
 
-    private void SetupText()
+    private void    setupText()
     {
         // Create our text manager
-        m_text_manager = new TextManager();
+        m_text_manager = new TextManager(m_context);
 
         InputStream istr;
         Bitmap bmp = null;

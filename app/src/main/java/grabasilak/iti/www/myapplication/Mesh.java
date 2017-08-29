@@ -141,11 +141,6 @@ class Mesh {
         Matrix.scaleM       (m_model_matrix, 0,     sx, sy, sz);
     }
 
-    /**
-     * Encapsulates the OpenGL ES instructions for drawing this shape.
-     *
-     * @param program    - The Shading program which decided how the shape is going to be rendered.
-     */
     void draw(int program, Camera camera, Light light, int UBO_Matrices )
     {
         float[] mw_matrix       = new float[16];

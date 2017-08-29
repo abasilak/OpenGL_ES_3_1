@@ -30,9 +30,10 @@ class FPS {
     void end()
     {
         m_end_time  = nanoTime();
+        compute();
     }
 
-    void compute()
+    private void compute()
     {
         m_time = m_end_time - m_start_time;
         m_fps = FPS_FACTOR / m_time;

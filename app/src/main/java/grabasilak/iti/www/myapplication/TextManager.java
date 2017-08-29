@@ -1,5 +1,6 @@
 package grabasilak.iti.www.myapplication;
 
+import android.content.Context;
 import android.opengl.GLES31;
 import android.opengl.Matrix;
 
@@ -11,12 +12,18 @@ import java.util.Iterator;
 import java.util.Vector;
 
 import static android.opengl.GLES20.GL_ARRAY_BUFFER;
+import static android.opengl.GLES20.GL_BLEND;
 import static android.opengl.GLES20.GL_ELEMENT_ARRAY_BUFFER;
+import static android.opengl.GLES20.GL_ONE;
+import static android.opengl.GLES20.GL_ONE_MINUS_SRC_ALPHA;
 import static android.opengl.GLES20.GL_STATIC_DRAW;
 import static android.opengl.GLES20.GL_TRIANGLES;
 import static android.opengl.GLES20.GL_UNSIGNED_SHORT;
 import static android.opengl.GLES20.glBindBuffer;
+import static android.opengl.GLES20.glBlendFunc;
 import static android.opengl.GLES20.glBufferData;
+import static android.opengl.GLES20.glDisable;
+import static android.opengl.GLES20.glEnable;
 import static android.opengl.GLES20.glGenBuffers;
 import static android.opengl.GLES30.glBindVertexArray;
 import static android.opengl.GLES30.glDrawRangeElements;
@@ -31,11 +38,13 @@ import static android.opengl.GLES31.glVertexAttribPointer;
 
 public class TextManager {
 
-	boolean	m_enabled = true;
+    private boolean	m_enabled = true;
 
 	private static final float RI_TEXT_UV_BOX_WIDTH = 0.125f;
 	private static final float RI_TEXT_WIDTH = 32.0f;
 	private static final float RI_TEXT_SPACESIZE = 20f;
+
+    private Shader m_shader_render;
 
 	private FloatBuffer vertexBuffer;
 	private FloatBuffer textureBuffer;
@@ -64,7 +73,7 @@ public class TextManager {
 
 	private float uniformscale;
 
-	public static int[] l_size = {36,29,30,34,25,25,34,33,
+    private static int[] l_size = {36,29,30,34,25,25,34,33,
 								   11,20,31,24,48,35,39,29,
 								   42,31,27,31,34,35,46,35,
 								   31,27,30,26,28,26,31,28,
@@ -73,9 +82,9 @@ public class TextManager {
 								   0,38,39,12,36,34,0,0,
 								   0,38,0,0,0,0,0,0};
 
-	public Vector<TextObject> txtcollection;
+    private Vector<TextObject> txtcollection;
 
-	public TextManager()
+	public TextManager(Context context)
 	{
 		// Create our container
 		txtcollection = new Vector<>();
@@ -88,23 +97,26 @@ public class TextManager {
 
 		// init as 0 as default
 		texturenr = 0;
+
+        m_shader_render = new Shader(context, context.getString(R.string.SHADER_TEXT_RENDERING_NAME));
 	}
 
     public void clear()
     {
-        txtcollection.clear();
+        if(m_enabled)
+            txtcollection.clear();
     }
 
 	public void addText(TextObject obj)
 	{
-		txtcollection.add(obj);
+        if(m_enabled)
+		    txtcollection.add(obj);
 	}
 
 	public void setTextureID(int val)
 	{
 		texturenr = val;
 	}
-
 
 	public void AddCharRenderInformation(float[] vec, float[] cs, float[] uv, short[] indi)
 	{
@@ -173,7 +185,6 @@ public class TextManager {
 		colors = new float[charcount * 16];
 		uvs = new float[charcount * 8];
 		indices = new short[charcount * 6];
-
 	}
 
 	public void PrepareDraw()
@@ -292,42 +303,52 @@ public class TextManager {
         glBindVertexArray ( 0 );
     }
 
-	public void Draw(int program, int mScreenWidth, int mScreenHeight)
+	public void Draw(int mScreenWidth, int mScreenHeight)
 	{
-        // Set the correct shader for our grid object.
-		glUseProgram(program);
+        if(!m_enabled)
+            return;
 
-		float[] mProjection = new float[16];
-		float[] mView = new float[16];
-		float[] mProjView = new float[16];
+        PrepareDraw();
 
-		Matrix.orthoM(mProjection, 0, 0f, mScreenWidth, 0.0f, mScreenHeight, 0, 50);
-
-		// Set the camera position (View matrix)
-		Matrix.setLookAtM(mView, 0, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 1.0f, 0.0f);
-
-		// Calculate the projection and view transformation
-		Matrix.multiplyMM(mProjView, 0, mProjection, 0, mView, 0);
-
-    	// Apply the projection and view transformation
-        glUniformMatrix4fv(glGetUniformLocation(program, "uniform_mvp"), 1, false, mProjView, 0);
-
-        // Set the sampler texture unit to our selected id
-	    glUniform1i (  glGetUniformLocation (program, "font_texture" ), 0);
-
-		GLES31.glActiveTexture(GLES31.GL_TEXTURE0);
-		GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, texturenr);
-
-		// 3. DRAW
-        glBindVertexArray ( m_vao[0] );
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         {
-            glDrawRangeElements(GL_TRIANGLES, 0, indices.length, indices.length, GL_UNSIGNED_SHORT, 0);
+            // Set the correct shader for our grid object.
+            glUseProgram(m_shader_render.getProgram());
+            {
+                float[] mProjection = new float[16];
+                float[] mView       = new float[16];
+                float[] mProjView   = new float[16];
+
+                Matrix.orthoM(mProjection, 0, 0f, mScreenWidth, 0.0f, mScreenHeight, 0, 50);
+
+                // Set the camera position (View matrix)
+                Matrix.setLookAtM(mView, 0, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 1.0f, 0.0f);
+
+                // Calculate the projection and view transformation
+                Matrix.multiplyMM(mProjView, 0, mProjection, 0, mView, 0);
+
+                // Apply the projection and view transformation
+                glUniformMatrix4fv(glGetUniformLocation(m_shader_render.getProgram(), "uniform_mvp"), 1, false, mProjView, 0);
+
+                // Set the sampler texture unit to our selected id
+                glUniform1i(glGetUniformLocation(m_shader_render.getProgram(), "font_texture"), 0);
+
+                GLES31.glActiveTexture(GLES31.GL_TEXTURE0);
+                GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, texturenr);
+
+                // 3. DRAW
+                glBindVertexArray(m_vao[0]);
+                {
+                    glDrawRangeElements(GL_TRIANGLES, 0, indices.length, indices.length, GL_UNSIGNED_SHORT, 0);
+                }
+                glBindVertexArray(0);
+
+                GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, 0);
+            }
+            glUseProgram(0);
         }
-        glBindVertexArray ( 0 );
-
-        GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, 0);
-
-        glUseProgram(0);
+        glDisable(GL_BLEND);
 	}
 
 	private int convertCharToIndex(int c_val)
