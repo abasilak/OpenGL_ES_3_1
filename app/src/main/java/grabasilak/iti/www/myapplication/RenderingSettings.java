@@ -15,8 +15,8 @@ import static android.opengl.GLES31.glGetError;
 
 class RenderingSettings {
 
-    FPS        m_fps;
-    Viewport   m_viewport;
+    FPS              m_fps;
+    Viewport         m_viewport;
     final float      m_depth;
     final float []   m_background_color;
 

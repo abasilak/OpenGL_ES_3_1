@@ -17,7 +17,7 @@ class FPS {
         start();
     }
 
-    private void start()
+    void start()
     {
         m_start_time = nanoTime();
     }

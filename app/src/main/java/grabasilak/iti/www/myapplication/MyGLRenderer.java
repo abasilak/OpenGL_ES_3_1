@@ -182,6 +182,8 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         {
             m_light.m_is_animated = false;
 
+            m_rendering_settings.m_fps.start();
+
             m_light.m_shadow_map_viewport.setViewport();
             glBindFramebuffer(GL_FRAMEBUFFER, m_light.m_shadow_map_fbo[0]);
             {
@@ -195,7 +197,14 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
                 glColorMask(true, true, true, true);
             }
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+            m_rendering_settings.m_fps.end();
+            m_rendering_settings.m_fps.compute();
+            m_text_manager.clear();
+            m_text_manager.addText(new TextObject("Shadow: " + String.format("%.2f", m_rendering_settings.m_fps.getTime()), 50, m_rendering_settings.m_viewport.m_height - 50));
         }
+
+        m_rendering_settings.m_fps.start();
 
         m_rendering_settings.m_viewport.setViewport();
         glBindFramebuffer(GL_FRAMEBUFFER, m_forward_fbo[0]);
@@ -222,22 +231,22 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
                 glDepthMask(true);
             }
 
-            // Get the amount of time the last frame took.
             m_rendering_settings.m_fps.end();
             m_rendering_settings.m_fps.compute();
-            m_rendering_settings.m_fps.reset();
+            m_text_manager.addText(new TextObject("Forward: " + String.format("%.2f", m_rendering_settings.m_fps.getTime()), 50, m_rendering_settings.m_viewport.m_height - 100));
 
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+            if(m_text_manager.m_enabled)
             {
-                m_text_manager.addText(new TextObject("Forward: " + String.format("%.2f", m_rendering_settings.m_fps.getTime()), 50, m_rendering_settings.m_viewport.m_height - 50));
-                m_text_manager.PrepareDraw();
-                m_text_manager.Draw(m_text_rendering.getProgram(), m_rendering_settings.m_viewport.m_width, m_rendering_settings.m_viewport.m_height);
+                glEnable(GL_BLEND);
+                glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+                {
+                    m_text_manager.PrepareDraw();
+                    m_text_manager.Draw(m_text_rendering.getProgram(), m_rendering_settings.m_viewport.m_width, m_rendering_settings.m_viewport.m_height);
+                }
+                glDisable(GL_BLEND);
             }
-            glDisable(GL_BLEND);
-
-            glInvalidateFramebuffer(GL_FRAMEBUFFER, 1, new int[]{GL_DEPTH_ATTACHMENT}, 0 );
         }
+        glInvalidateFramebuffer(GL_FRAMEBUFFER, 1, new int[]{GL_DEPTH_ATTACHMENT}, 0 );
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         // Final Quad Rendering
