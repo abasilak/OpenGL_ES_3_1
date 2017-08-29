@@ -23,7 +23,8 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         myGLSurfaceView = (MyGLSurfaceView) findViewById(R.id.my_opengl_es_view);
-        myGLSurfaceView.init(this);
+        myGLSurfaceView.getHolder().setFixedSize(getResources().getInteger(R.integer.SCREEN_WIDTH),getResources().getInteger(R.integer.SCREEN_HEIGHT));
+        myGLSurfaceView.init(this, getResources().getInteger(R.integer.SCREEN_WIDTH), getResources().getInteger(R.integer.SCREEN_HEIGHT));
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(view -> {

@@ -38,6 +38,8 @@ class ScreenQuad {
     private int			  m_id;
 
     private ArrayList<Shader>              m_shaders            = new ArrayList<>();
+    private ArrayList<ArrayList<Float>>    m_float_ids          = new ArrayList<>();
+    private ArrayList<ArrayList<String>>   m_float_strings      = new ArrayList<>();
     private ArrayList<ArrayList<Integer>>  m_textures_ids       = new ArrayList<>();
     private ArrayList<ArrayList<String>>   m_textures_strings   = new ArrayList<>();
 
@@ -96,6 +98,14 @@ class ScreenQuad {
 
         glUseProgram(m_shaders.get(m_id).getProgram());
         {
+            if(!m_textures_ids.isEmpty())
+            for (int i = 0; i < m_textures_ids.get(m_id).size(); i++)
+                glUniform1i(glGetUniformLocation(m_shaders.get(m_id).getProgram(), m_textures_strings.get(m_id).get(i)), i);
+
+            if(!m_float_ids.isEmpty())
+            for (int i = 0; i < m_float_ids.get(m_id).size(); i++)
+                glUniform1f(glGetUniformLocation(m_shaders.get(m_id).getProgram(), m_float_strings.get(m_id).get(i)), m_float_ids.get(m_id).get(i));
+
             glBindVertexArray(m_vao[0]);
             {
                 for (int i = 0; i < m_textures_ids.get(m_id).size(); i++)
@@ -126,22 +136,10 @@ class ScreenQuad {
         m_textures_ids.add(tex_ids);
         m_textures_strings.add(tex_strings);
     }
-    void    setUniformTextures(ArrayList<String> names)
+
+    void    addUniformFloats(ArrayList<Float> float_ids, ArrayList<String> float_strings)
     {
-        glUseProgram(m_shaders.get(m_id).getProgram());
-        {
-            for (int i = 0; i < m_textures_ids.get(m_id).size(); i++)
-                glUniform1i(glGetUniformLocation(m_shaders.get(m_id).getProgram(), names.get(i)), i);
-        }
-        glUseProgram(0);
-    }
-    void    setUniformFloats(ArrayList<String> names, ArrayList<Float> values)
-    {
-        glUseProgram(m_shaders.get(m_id).getProgram());
-        {
-            for (int i = 0; i < names.size(); i++)
-                glUniform1f(glGetUniformLocation(m_shaders.get(m_id).getProgram(), names.get(i)), values.get(i));
-        }
-        glUseProgram(0);
+        m_float_ids.add(float_ids);
+        m_float_strings.add(float_strings);
     }
 }

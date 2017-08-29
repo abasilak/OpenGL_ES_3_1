@@ -25,12 +25,12 @@ class MyGLSurfaceView extends GLSurfaceView
         super(context, attrs);
     }
 
-    public void init(Context context)
+    public void init(Context context, int width, int height)
     {
         // Create an OpenGL ES 3.0 context
         setEGLContextClientVersion(3);
 
-        m_renderer = new MyGLRenderer(context);
+        m_renderer = new MyGLRenderer(context, width, height);
 
         // Set the Renderer for drawing on the GLSurfaceView
         setRenderer(m_renderer);

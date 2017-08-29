@@ -5,7 +5,7 @@ import android.opengl.Matrix;
 class Camera {
 
             float    m_world_rot_angle;
-            float[]  m_world_rot_axis = new float[3];
+    private float[]  m_world_rot_axis = new float[3];
 
     float[] m_world_matrix       = new float[16];
     float[] m_view_matrix        = new float[16];
@@ -36,7 +36,7 @@ class Camera {
         m_up[1] = 1.0f;
         m_up[2] = 0.0f;
 
-        m_near_field = 0.1f;
+        m_near_field = 1f;
         m_far_field  = 100.0f;
         m_fov        = 30.0f;
     }

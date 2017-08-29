@@ -56,6 +56,7 @@ import static android.opengl.GLES20.glTexImage2D;
 import static android.opengl.GLES20.glTexParameteri;
 import static android.opengl.GLES30.GL_SRGB8_ALPHA8;
 import static android.opengl.GLES30.glDrawBuffers;
+import static android.opengl.GLES30.glInvalidateFramebuffer;
 import static android.opengl.GLES31.GL_DEPTH_TEST;
 import static android.opengl.GLES31.GL_DYNAMIC_DRAW;
 import static android.opengl.GLES31.GL_LEQUAL;
@@ -102,10 +103,10 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
 
     private RenderingSettings m_rendering_settings;
 
-    MyGLRenderer(Context context)
+    MyGLRenderer(Context context, int width, int height)
     {
         m_context = context;
-        m_rendering_settings = new RenderingSettings();
+        m_rendering_settings = new RenderingSettings(width, height);
     }
 
     // INIT FUNCTION
@@ -136,18 +137,17 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         m_screen_quad_output.setViewport    (m_rendering_settings.m_viewport.m_width, m_rendering_settings.m_viewport.m_height);
         m_screen_quad_output.addShader      (m_texture_color_rendering);
         m_screen_quad_output.addTextureList (new ArrayList<>(Collections.singletonList(m_forward_texture_color[0])),
-                                             new ArrayList<>(Collections.singletonList("Final Image")));
-        m_screen_quad_output.setUniformTextures(new ArrayList<>(Collections.singletonList("uniform_texture_color")));
+                                             new ArrayList<>(Collections.singletonList("uniform_texture_color")));
 
         m_screen_quad_debug = new ScreenQuad(8);
         m_screen_quad_debug.setViewport    (m_rendering_settings.m_viewport.m_width, m_rendering_settings.m_viewport.m_height);
         m_screen_quad_debug.addShader      (m_texture_depth_rendering);
         m_screen_quad_debug.addTextureList (
                 new ArrayList<>(Collections.singletonList(m_light.m_shadow_map_texture_depth[0])),
-                new ArrayList<>(Collections.singletonList("Shadow Map")));
-        m_screen_quad_output.setUniformTextures(new ArrayList<>(Collections.singletonList("uniform_texture_depth")));
-        m_screen_quad_output.setUniformFloats(
-                new ArrayList<>(Arrays.asList("uniform_z_near", "uniform_z_far")), new ArrayList<>(Arrays.asList(m_light.m_camera.m_near_field, m_light.m_camera.m_far_field)));
+                new ArrayList<>(Collections.singletonList("uniform_texture_depth")));
+        m_screen_quad_debug.addUniformFloats(
+                new ArrayList<>(Arrays.asList(m_light.m_camera.m_near_field, m_light.m_camera.m_far_field)),
+                new ArrayList<>(Arrays.asList("uniform_z_near", "uniform_z_far")));
 
         SetupText();
 
@@ -230,11 +230,13 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
             glEnable(GL_BLEND);
             glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
             {
-                m_text_manager.addText(new TextObject("Forward Rendering: " + String.format("%.2f", m_rendering_settings.m_fps.getTime()), 50, m_rendering_settings.m_viewport.m_height - 50));
+                m_text_manager.addText(new TextObject("Forward: " + String.format("%.2f", m_rendering_settings.m_fps.getTime()), 50, m_rendering_settings.m_viewport.m_height - 50));
                 m_text_manager.PrepareDraw();
                 m_text_manager.Draw(m_text_rendering.getProgram(), m_rendering_settings.m_viewport.m_width, m_rendering_settings.m_viewport.m_height);
             }
             glDisable(GL_BLEND);
+
+            glInvalidateFramebuffer(GL_FRAMEBUFFER, 1, new int[]{GL_DEPTH_ATTACHMENT}, 0 );
         }
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 

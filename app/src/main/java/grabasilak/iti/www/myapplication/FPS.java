@@ -4,7 +4,8 @@ import static java.lang.System.nanoTime;
 
 class FPS {
 
-    private final float     FPS_FACTOR = 1000000000.0f;
+    private final float     MS_FACTOR   = 1000000.0f;
+    private final float     FPS_FACTOR  = 1000000000.0f;
 
     private float      m_fps;
     private float      m_time;
@@ -43,6 +44,6 @@ class FPS {
     }
     float getTime()
     {
-        return m_time/1000000.0f;
+        return m_time/MS_FACTOR;
     }
 }

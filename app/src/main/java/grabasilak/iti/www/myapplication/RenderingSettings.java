@@ -13,18 +13,18 @@ import static android.opengl.GLES20.glCheckFramebufferStatus;
 import static android.opengl.GLES31.GL_NO_ERROR;
 import static android.opengl.GLES31.glGetError;
 
-public class RenderingSettings {
+class RenderingSettings {
 
-    public       FPS        m_fps;
-    public       Viewport   m_viewport;
-    public final float      m_depth;
-    public final float []   m_background_color;
+    FPS        m_fps;
+    Viewport   m_viewport;
+    final float      m_depth;
+    final float []   m_background_color;
 
     // private constructor
-    public RenderingSettings ()
+    RenderingSettings (int width, int height)
     {
         m_fps                   = new FPS();
-        m_viewport              = new Viewport(0,0, 1080, 1920);
+        m_viewport              = new Viewport(0,0, width, height);
 
         m_depth                 = 1.0f;
 
@@ -35,17 +35,17 @@ public class RenderingSettings {
         m_background_color[3]   = 1.0f;
     }
 
-    public static void checkGlError(String glOperation) {
+    static void checkGlError(String glOperation) {
 
         int error;
         while ((error = glGetError()) != GL_NO_ERROR)
         {
             Log.e(Resources.getSystem().getString(R.string.APP_TITLE), glOperation + ": glError " + error);
-            throw new RuntimeException(glOperation + ": glError " + error);
+          //  throw new RuntimeException(glOperation + ": glError " + error);
         }
     }
 
-    public static void checkFramebufferStatus() {
+    static void checkFramebufferStatus() {
         int status = glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER);
         if (status != GL_FRAMEBUFFER_COMPLETE) {
             String msg = "";
@@ -67,5 +67,4 @@ public class RenderingSettings {
             throw new RuntimeException(msg + ": Framebuffer Status" + Integer.toHexString(status));
         }
     }
-
 }
