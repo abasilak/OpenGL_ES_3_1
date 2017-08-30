@@ -17,14 +17,17 @@ import java.util.Collections;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-import static android.opengl.GLES10.glCullFace;
 import static android.opengl.GLES20.GL_BACK;
 import static android.opengl.GLES20.GL_CCW;
+import static android.opengl.GLES20.GL_COLOR_BUFFER_BIT;
 import static android.opengl.GLES20.GL_CULL_FACE;
+import static android.opengl.GLES20.GL_DEPTH_BUFFER_BIT;
 import static android.opengl.GLES20.GL_TEXTURE_2D;
 import static android.opengl.GLES20.GL_TEXTURE_MAG_FILTER;
 import static android.opengl.GLES20.GL_TEXTURE_MIN_FILTER;
 import static android.opengl.GLES20.glBindTexture;
+import static android.opengl.GLES20.glClear;
+import static android.opengl.GLES20.glCullFace;
 import static android.opengl.GLES20.glFrontFace;
 import static android.opengl.GLES20.glGenTextures;
 import static android.opengl.GLES20.glTexParameteri;
@@ -52,7 +55,8 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
     private Context             m_context;
     private TextManager         m_text_manager;
 
-    private ForwardRendering    m_rendering_forward;
+    private RenderingForward    m_rendering_forward;
+    private PeelingF2B          m_peeling_f2b;
 
     private Shader              m_shader_color_render;
     private Shader              m_shader_depth_render;
@@ -80,7 +84,9 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
 
         addMesh(m_context.getString(R.string.MESH_NAME), true);
 
-        m_rendering_forward   = new ForwardRendering  (m_context, m_rendering_settings);
+        m_rendering_forward   = new RenderingForward(m_context, m_rendering_settings);
+
+        m_peeling_f2b         = new PeelingF2B      (m_context, m_rendering_settings);
 
         m_shader_color_render = new Shader(m_context, m_context.getString(R.string.SHADER_TEXTURE_COLOR_RENDERING_NAME));
         m_shader_depth_render = new Shader(m_context, m_context.getString(R.string.SHADER_TEXTURE_DEPTH_RENDERING_NAME));
@@ -89,14 +95,14 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         {
             m_screen_quad_output.setViewport    (m_rendering_settings.m_viewport.m_width, m_rendering_settings.m_viewport.m_height);
             m_screen_quad_output.addShader      (m_shader_color_render);
-            m_screen_quad_output.addTextureList (new ArrayList<>(Collections.singletonList(m_rendering_forward.m_texture_color[0])),
+            m_screen_quad_output.addTextureList (new ArrayList<>(Collections.singletonList(m_peeling_f2b.m_texture_color[0])),
                                                  new ArrayList<>(Collections.singletonList("uniform_texture_color")));
         }
-        m_screen_quad_debug = new ScreenQuad(8);
+        m_screen_quad_debug = new ScreenQuad(4);
         {
             m_screen_quad_debug.setViewport     (m_rendering_settings.m_viewport.m_width, m_rendering_settings.m_viewport.m_height);
             m_screen_quad_debug.addShader       (m_shader_depth_render);
-            m_screen_quad_debug.addTextureList  (new ArrayList<>(Collections.singletonList(m_light.m_shadow_map_texture_depth[0])),
+            m_screen_quad_debug.addTextureList  (new ArrayList<>(Collections.singletonList(m_peeling_f2b.m_texture_depth[0])),
                                                  new ArrayList<>(Collections.singletonList("uniform_texture_depth")));
             m_screen_quad_debug.addUniformFloats(new ArrayList<>(Arrays.asList(m_light.m_camera.m_near_field, m_light.m_camera.m_far_field)),
                                                  new ArrayList<>(Arrays.asList("uniform_z_near", "uniform_z_far")));
@@ -138,12 +144,15 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
             m_camera.computeViewMatrix();
         }
         {
-            m_rendering_forward.draw(m_rendering_settings, m_text_manager, m_meshes, m_light, m_camera, m_ubo_matrices[0]);
+            //m_rendering_forward.draw(m_rendering_settings, m_text_manager, m_meshes, m_light, m_camera, m_ubo_matrices[0]);
+            m_peeling_f2b.draw(m_rendering_settings, m_text_manager, m_meshes, m_light, m_camera, m_ubo_matrices[0]);
         }
         {
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             m_screen_quad_output.draw();
             m_screen_quad_debug.draw();
         }
+        m_text_manager.draw(m_rendering_settings);
 
         RenderingSettings.checkGlError("onDrawFrame");
     }

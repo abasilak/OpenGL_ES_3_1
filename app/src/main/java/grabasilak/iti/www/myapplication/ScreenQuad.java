@@ -7,7 +7,6 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 
 import static android.opengl.GLES20.GL_ARRAY_BUFFER;
-import static android.opengl.GLES20.GL_DEPTH_BUFFER_BIT;
 import static android.opengl.GLES20.GL_FLOAT;
 import static android.opengl.GLES20.GL_STATIC_DRAW;
 import static android.opengl.GLES20.GL_TEXTURE0;
@@ -17,7 +16,6 @@ import static android.opengl.GLES20.glActiveTexture;
 import static android.opengl.GLES20.glBindBuffer;
 import static android.opengl.GLES20.glBindTexture;
 import static android.opengl.GLES20.glBufferData;
-import static android.opengl.GLES20.glClear;
 import static android.opengl.GLES20.glDrawArrays;
 import static android.opengl.GLES20.glEnableVertexAttribArray;
 import static android.opengl.GLES20.glGenBuffers;
@@ -93,8 +91,6 @@ class ScreenQuad {
     void    draw()
     {
         m_viewport.setViewport();
-
-        glClear(GL_DEPTH_BUFFER_BIT);
 
         glUseProgram(m_shaders.get(m_id).getProgram());
         {

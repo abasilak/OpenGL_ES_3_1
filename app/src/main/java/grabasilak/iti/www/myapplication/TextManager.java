@@ -303,12 +303,14 @@ public class TextManager {
         glBindVertexArray ( 0 );
     }
 
-	public void Draw(int mScreenWidth, int mScreenHeight)
+	public void draw(RenderingSettings rendering_settings)
 	{
         if(!m_enabled)
             return;
 
         PrepareDraw();
+
+        rendering_settings.m_viewport.setViewport();
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
@@ -320,7 +322,7 @@ public class TextManager {
                 float[] mView       = new float[16];
                 float[] mProjView   = new float[16];
 
-                Matrix.orthoM(mProjection, 0, 0f, mScreenWidth, 0.0f, mScreenHeight, 0, 50);
+                Matrix.orthoM(mProjection, 0, 0f, rendering_settings.m_viewport.m_width, 0.0f, rendering_settings.m_viewport.m_height, 0, 50);
 
                 // Set the camera position (View matrix)
                 Matrix.setLookAtM(mView, 0, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 1.0f, 0.0f);

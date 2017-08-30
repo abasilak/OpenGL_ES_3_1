@@ -2,9 +2,6 @@ package grabasilak.iti.www.myapplication;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.util.Log;
 
 public class MainActivity extends Activity {
 
@@ -24,18 +21,8 @@ public class MainActivity extends Activity {
 
         myGLSurfaceView = (MyGLSurfaceView) findViewById(R.id.my_opengl_es_view);
         myGLSurfaceView.getHolder().setFixedSize(getResources().getInteger(R.integer.SCREEN_WIDTH),getResources().getInteger(R.integer.SCREEN_HEIGHT));
+        myGLSurfaceView.getHolder().setFormat(1);
         myGLSurfaceView.init(this, getResources().getInteger(R.integer.SCREEN_WIDTH), getResources().getInteger(R.integer.SCREEN_HEIGHT));
-
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(view -> {
-
-            Log.d("FAB", "MESH ADDED !");
-
-            Snackbar.make(view, "'" + getString(R.string.MESH_NAME) + "' Added", Snackbar.LENGTH_SHORT).setAction("Action", null).show();
-
-            // Hide FAB
-            fab.hide();
-        });
     }
 
     @Override

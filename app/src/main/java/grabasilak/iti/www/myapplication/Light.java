@@ -54,15 +54,16 @@ class Light {
     private float []    m_color                     = new float[3];
             float []    m_initial_position          = new float[3];
 
-    private final int   m_shadow_map_size;
+
     private Shader      m_shader_shadow_map;
     private Shader      m_shader_render;
 
-    private FloatBuffer m_light_buffer;
+    private FloatBuffer m_buffer;
     private int []	    m_ubo = new int[1];
 
-    private int	[]      m_shadow_map_fbo = new int[1];
-    int	[]              m_shadow_map_texture_depth  = new int[1];
+    private int	[]      m_fbo = new int[1];
+            int	[]      m_texture_depth = new int[1];
+    private final int   m_texture_size;
 
     Camera              m_camera;
     Viewport            m_viewport;
@@ -76,7 +77,7 @@ class Light {
         m_att_quadratic		    = 0.0032f;
         m_spotlight_cutoff	    = 30.0f;
 
-        m_shadow_map_size       = context.getResources().getInteger(R.integer.SHADOW_MAP_SIZE);
+        m_texture_size = context.getResources().getInteger(R.integer.SHADOW_MAP_SIZE);
 
         m_is_rendered           = true;
         m_is_spotlight          = true;
@@ -88,7 +89,7 @@ class Light {
         m_color[0]              = m_color[1]            = m_color[2]            = 1.0f;
         m_initial_position[0]   = m_initial_position[1] = m_initial_position[2] = 0.0f;
 
-        m_viewport = new Viewport(0, 0, m_shadow_map_size, m_shadow_map_size);
+        m_viewport = new Viewport(0, 0, m_texture_size, m_texture_size);
         m_viewport.setAspectRatio();
         createFBO();
 
@@ -101,7 +102,7 @@ class Light {
     {
         float [] light_data = new float[24];
 
-        m_light_buffer = ByteBuffer.allocateDirect (6 * m_sizeofV4).order (ByteOrder.nativeOrder() ).asFloatBuffer();
+        m_buffer = ByteBuffer.allocateDirect (6 * m_sizeofV4).order (ByteOrder.nativeOrder() ).asFloatBuffer();
         //the light position
         light_data[0] = m_camera.m_eye[0];
         light_data[1] = m_camera.m_eye[1];
@@ -148,9 +149,9 @@ class Light {
         glGenBuffers(1, m_ubo, 0);
         glBindBuffer(GL_UNIFORM_BUFFER, m_ubo[0]);
         {
-            m_light_buffer.put (light_data);
-            m_light_buffer.position ( 0 );
-            glBufferData   (GL_UNIFORM_BUFFER, 6 * m_sizeofV4, m_light_buffer, GL_DYNAMIC_DRAW);
+            m_buffer.put (light_data);
+            m_buffer.position ( 0 );
+            glBufferData   (GL_UNIFORM_BUFFER, 6 * m_sizeofV4, m_buffer, GL_DYNAMIC_DRAW);
         }
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
         glBindBufferBase(GL_UNIFORM_BUFFER, 2, m_ubo[0]);
@@ -160,7 +161,7 @@ class Light {
     {
         float [] light_data = new float[8];
 
-        m_light_buffer = ByteBuffer.allocateDirect (2 * m_sizeofV4).order (ByteOrder.nativeOrder() ).asFloatBuffer();
+        m_buffer = ByteBuffer.allocateDirect (2 * m_sizeofV4).order (ByteOrder.nativeOrder() ).asFloatBuffer();
         //the light position
         light_data[0] = m_camera.m_eye[0];
         light_data[1] = m_camera.m_eye[1];
@@ -183,9 +184,9 @@ class Light {
 
         glBindBuffer(GL_UNIFORM_BUFFER, m_ubo[0]);
         {
-            m_light_buffer.put (light_data);
-            m_light_buffer.position ( 0 );
-            glBufferSubData(GL_UNIFORM_BUFFER, 0, 2 * m_sizeofV4, m_light_buffer);
+            m_buffer.put (light_data);
+            m_buffer.position ( 0 );
+            glBufferSubData(GL_UNIFORM_BUFFER, 0, 2 * m_sizeofV4, m_buffer);
         }
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
     }
@@ -193,8 +194,8 @@ class Light {
     private void createFBO()
     {
         // Create Shadow Texture
-        glGenTextures(1, m_shadow_map_texture_depth, 0);
-        glBindTexture(GL_TEXTURE_2D, m_shadow_map_texture_depth[0]);
+        glGenTextures(1, m_texture_depth, 0);
+        glBindTexture(GL_TEXTURE_2D, m_texture_depth[0]);
         {
             glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, m_viewport.m_width, m_viewport.m_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, null);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -205,10 +206,10 @@ class Light {
         glBindTexture(GL_TEXTURE_2D, 0);
 
         // Create Shadow Framebuffer
-        glGenFramebuffers(1, m_shadow_map_fbo, 0);
-        glBindFramebuffer(GL_FRAMEBUFFER, m_shadow_map_fbo[0]);
+        glGenFramebuffers(1, m_fbo, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, m_fbo[0]);
         {
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_shadow_map_texture_depth[0], 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_texture_depth[0], 0);
         }
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -249,24 +250,24 @@ class Light {
 
             if(m_casts_shadows)
             {
-                m_camera.computeViewMatrix();
-                m_viewport.setViewport();
-
-                glBindFramebuffer(GL_FRAMEBUFFER, m_shadow_map_fbo[0]);
+                rendering_settings.m_fps.start();
                 {
-                    glClear(GL_DEPTH_BUFFER_BIT);
-                    glColorMask(false, false, false, false);
+                    m_camera.computeViewMatrix();
+                    m_viewport.setViewport();
 
-                    rendering_settings.m_fps.start();
+                    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo[0]);
                     {
-                        for (int i = 0; i < meshes.size(); i++)
-                            meshes.get(i).drawSimple(m_shader_shadow_map.getProgram(), m_camera);
+                        glClear(GL_DEPTH_BUFFER_BIT);
+                        glColorMask(false, false, false, false);
+                        {
+                            for (int i = 0; i < meshes.size(); i++)
+                                meshes.get(i).drawSimple(m_shader_shadow_map.getProgram(), m_camera);
+                        }
+                        glColorMask(true, true, true, true);
                     }
-                    rendering_settings.m_fps.end();
-
-                    glColorMask(true, true, true, true);
+                    glBindFramebuffer(GL_FRAMEBUFFER, 0);
                 }
-                glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                rendering_settings.m_fps.end();
 
                 text_manager.addText(new TextObject("Shadow: " + String.format("%.2f", rendering_settings.m_fps.getTime()), 50, rendering_settings.m_viewport.m_height - 50));
             }

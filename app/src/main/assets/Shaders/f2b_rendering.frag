@@ -40,7 +40,10 @@ struct Textures
 	sampler2D	specular;
 	sampler2D	emission;
 	sampler2D	shadow_map;
+	sampler2D	depth;
 };
+
+uniform ivec2           uniform_resolution;
 
 uniform Camera			uniform_camera;
 uniform Textures		uniform_textures;
@@ -226,15 +229,32 @@ float lightGetSpecular(const vec3 normal_wcs, const vec3 light_direction_wcs)
     return	pow(max(0.0f, dot(vertex_to_camera_wcs, reflect_wcs)), specular_shininess);
 }
 
+float		uniform_z_near = 1.;
+float		uniform_z_far = 100.;
+
+float LinearizeDepth(float depth)
+{
+    float z = depth * 2.0 - 1.0; // Back to NDC
+    return (2.0 * uniform_z_near * uniform_z_far) / (uniform_z_far + uniform_z_near - z * (uniform_z_far - uniform_z_near));
+}
+
 void main()
 {
+    vec2 coords = gl_FragCoord.xy/vec2(uniform_resolution);
+    float depth = texture(uniform_textures.depth, coords).r;
+	if(gl_FragCoord.z <= depth)
+	{
+		out_frag_color  = vec4(vec3(LinearizeDepth(gl_FragCoord.z)/uniform_z_far), 1.0f);
+		//discard;//discard;
+    }
+
 	// [TEXTURES]
 	vec4 diffuse_tex = vec4(1.0f);
 	if (uniform_material_has_tex.x > 0)
 	{
 		diffuse_tex  = texture(uniform_textures.diffuse, fs_in.texcoord_v.xy);
-		if (diffuse_tex.a < 1.0f || uniform_material_diffuse_color.a < 1.0f)
-			discard;
+		//if (diffuse_tex.a < 1.0f || uniform_material_diffuse_color.a < 1.0f)
+		//	discard;
 	}
 
 	vec4 specular_tex = vec4(1.0f);

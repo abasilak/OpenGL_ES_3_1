@@ -29,6 +29,7 @@ import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 import java.util.ArrayList;
 
+import static android.opengl.GLES20.GL_TEXTURE5;
 import static android.opengl.GLES20.glUniformMatrix4fv;
 import static android.opengl.GLES31.GL_ARRAY_BUFFER;
 import static android.opengl.GLES31.GL_DYNAMIC_DRAW;
@@ -53,6 +54,7 @@ import static android.opengl.GLES31.glGenBuffers;
 import static android.opengl.GLES31.glGenVertexArrays;
 import static android.opengl.GLES31.glGetUniformBlockIndex;
 import static android.opengl.GLES31.glGetUniformLocation;
+import static android.opengl.GLES31.glProgramUniform2i;
 import static android.opengl.GLES31.glProgramUniform3f;
 import static android.opengl.GLES31.glUniform1i;
 import static android.opengl.GLES31.glUniformBlockBinding;
@@ -141,7 +143,7 @@ class Mesh {
         Matrix.scaleM       (m_model_matrix, 0,     sx, sy, sz);
     }
 
-    void draw(int program, Camera camera, Light light, int UBO_Matrices )
+    void draw(int program, Camera camera, Light light, int UBO_Matrices)
     {
         float[] mw_matrix       = new float[16];
         float[] lmw_matrix      = new float[16];
@@ -230,7 +232,7 @@ class Mesh {
 
             // bind the depth texture to the active texture unit
             glActiveTexture(GL_TEXTURE4);
-            glBindTexture(GL_TEXTURE_2D, light.m_shadow_map_texture_depth[0]);
+            glBindTexture(GL_TEXTURE_2D, light.m_texture_depth[0]);
 
             // 3. DRAW
             glBindVertexArray ( m_vao[0] );
@@ -254,6 +256,113 @@ class Mesh {
         glUseProgram(program);
         {
             glUniformMatrix4fv(glGetUniformLocation(program, "uniform_mvp"), 1, false, pvmw_matrix, 0);
+
+            // 3. DRAW
+            glBindVertexArray ( m_vao[0] );
+            {
+                glDrawRangeElements(GL_TRIANGLES, 0, m_indices_data.length, m_indices_data.length, GL_UNSIGNED_SHORT, 0);
+            }
+            glBindVertexArray ( 0 );
+        }
+        glUseProgram(0);
+    }
+
+    void peel(int program, Camera camera, Light light, int UBO_Matrices, int m_texture_depth, RenderingSettings rendering_settings)
+    {
+        float[] mw_matrix       = new float[16];
+        float[] lmw_matrix      = new float[16];
+        float[] inv_w_matrix    = new float[16];
+        float[] material_data   = new float[16];
+
+        Matrix.invertM(inv_w_matrix, 0, camera.m_world_matrix, 0 );
+        Matrix.transposeM(m_normal_matrix, 0, inv_w_matrix, 0 );
+        Matrix.multiplyMM(mw_matrix, 0, camera.m_world_matrix, 0, m_model_matrix, 0 );
+
+        Matrix.multiplyMM(lmw_matrix    , 0, light.m_camera.m_view_matrix       , 0, mw_matrix  , 0 );
+        Matrix.multiplyMM(m_light_matrix, 0, light.m_camera.m_projection_matrix , 0, lmw_matrix , 0 );
+
+        glBindBuffer(GL_UNIFORM_BUFFER, UBO_Matrices);
+        {
+            mw_matrix_buffer.put (mw_matrix);
+            mw_matrix_buffer.position ( 0 );
+            glBufferSubData(GL_UNIFORM_BUFFER, 0			, m_sizeofM44, mw_matrix_buffer);
+
+            v_matrix_buffer.put (camera.m_view_matrix);
+            v_matrix_buffer.position ( 0 );
+            glBufferSubData(GL_UNIFORM_BUFFER, 1 * m_sizeofM44, m_sizeofM44, v_matrix_buffer);
+
+            p_matrix_buffer.put (camera.m_projection_matrix);
+            p_matrix_buffer.position ( 0 );
+            glBufferSubData(GL_UNIFORM_BUFFER, 2 * m_sizeofM44, m_sizeofM44, p_matrix_buffer);
+
+            n_matrix_buffer.put (m_normal_matrix);
+            n_matrix_buffer.position ( 0 );
+            glBufferSubData(GL_UNIFORM_BUFFER, 3 * m_sizeofM44, m_sizeofM44, n_matrix_buffer);
+
+            l_matrix_buffer.put (m_light_matrix);
+            l_matrix_buffer.position ( 0 );
+            glBufferSubData(GL_UNIFORM_BUFFER, 4 * m_sizeofM44, m_sizeofM44, l_matrix_buffer);
+        }
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+        // Add program to OpenGL environment
+        glUseProgram(program);
+        {
+            // 2. SET UNIFORMS
+            glUniformBlockBinding(program, glGetUniformBlockIndex(program, "Matrices")  , 0);
+            glUniformBlockBinding(program, glGetUniformBlockIndex(program, "Material")  , 1);
+            glUniformBlockBinding(program, glGetUniformBlockIndex(program, "Light")     , 2);
+
+            glUniform1i(glGetUniformLocation(program, "uniform_textures.diffuse")       , 0);
+            glUniform1i(glGetUniformLocation(program, "uniform_textures.normal")        , 1);
+            glUniform1i(glGetUniformLocation(program, "uniform_textures.specular")      , 2);
+            glUniform1i(glGetUniformLocation(program, "uniform_textures.emission")      , 3);
+            glUniform1i(glGetUniformLocation(program, "uniform_textures.shadow_map")    , 4);
+            glUniform1i(glGetUniformLocation(program, "uniform_textures.depth")         , 5);
+
+            glProgramUniform3f(program, glGetUniformLocation(program, "uniform_camera.position_wcs"), camera.m_eye[0], camera.m_eye[1], camera.m_eye[2]);
+
+            glProgramUniform2i(program, glGetUniformLocation(program, "uniform_resolution"), rendering_settings.m_viewport.m_width, rendering_settings.m_viewport.m_height);
+
+            // 3. SET UBOs
+
+            //material_has_tex_loaded
+            material_data[0 ] = 0;
+            material_data[1 ] = 0;
+            material_data[2 ] = 0;
+            material_data[3 ] = 0;
+            //material_diffuse_opacity
+            material_data[4 ] = 1.0f;
+            material_data[5 ] = 0.5f;
+            material_data[6 ] = 0.5f;
+            material_data[7 ] = 1;
+            //material_specular_gloss
+            material_data[8 ] = 1;
+            material_data[9 ] = 1;
+            material_data[10] = 1;
+            material_data[11] = 40;
+            //material_emission
+            material_data[12] = 0;
+            material_data[13] = 0;
+            material_data[14] = 0;
+            material_data[15] = 0;
+
+            glBindBuffer(GL_UNIFORM_BUFFER, m_ubo[0]);
+            {
+                m_material_buffer.put (material_data);
+                m_material_buffer.position ( 0 );
+                glBufferSubData(GL_UNIFORM_BUFFER, 0, m_sizeofV4*4, m_material_buffer);
+            }
+            glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+            // 4. SET TEXTURES
+
+            // bind the depth texture to the active texture unit
+            glActiveTexture(GL_TEXTURE4);
+            glBindTexture(GL_TEXTURE_2D, light.m_texture_depth[0]);
+
+            glActiveTexture(GL_TEXTURE5);
+            glBindTexture(GL_TEXTURE_2D, m_texture_depth);
 
             // 3. DRAW
             glBindVertexArray ( m_vao[0] );
