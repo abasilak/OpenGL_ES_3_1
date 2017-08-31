@@ -1,4 +1,4 @@
-#version 310 es
+#include "version.h"
 
 precision mediump float;
 

@@ -128,9 +128,14 @@ class ScreenQuad {
 
     void	addShader			(Shader		shader) { m_shaders.add(shader); }
 
-    void	addTextureList(ArrayList<Integer> tex_ids, ArrayList<String> tex_strings)
+    void	setTextureList(ArrayList<Integer> tex_ids)
     {
+        m_textures_ids.clear();
         m_textures_ids.add(tex_ids);
+    }
+
+    void	addUniformTextures(ArrayList<String> tex_strings)
+    {
         m_textures_strings.add(tex_strings);
     }
 

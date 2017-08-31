@@ -1,6 +1,5 @@
-#version 310 es
+#include "version.h"
 
-precision mediump int;
 precision mediump float;
 
 layout(location = 0) out vec4 out_frag_color;

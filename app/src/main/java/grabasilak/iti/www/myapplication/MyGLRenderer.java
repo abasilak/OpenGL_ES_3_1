@@ -85,7 +85,6 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         addMesh(m_context.getString(R.string.MESH_NAME), true);
 
         m_rendering_forward   = new RenderingForward(m_context, m_rendering_settings);
-
         m_peeling_f2b         = new PeelingF2B      (m_context, m_rendering_settings);
 
         m_shader_color_render = new Shader(m_context, m_context.getString(R.string.SHADER_TEXTURE_COLOR_RENDERING_NAME));
@@ -93,19 +92,17 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
 
         m_screen_quad_output = new ScreenQuad(1);
         {
-            m_screen_quad_output.setViewport    (m_rendering_settings.m_viewport.m_width, m_rendering_settings.m_viewport.m_height);
-            m_screen_quad_output.addShader      (m_shader_color_render);
-            m_screen_quad_output.addTextureList (new ArrayList<>(Collections.singletonList(m_peeling_f2b.m_texture_color[0])),
-                                                 new ArrayList<>(Collections.singletonList("uniform_texture_color")));
+            m_screen_quad_output.setViewport        (m_rendering_settings.m_viewport.m_width, m_rendering_settings.m_viewport.m_height);
+            m_screen_quad_output.addShader          (m_shader_color_render);
+            m_screen_quad_output.addUniformTextures (   new ArrayList<>(Collections.singletonList("uniform_texture_color")));
         }
         m_screen_quad_debug = new ScreenQuad(4);
         {
-            m_screen_quad_debug.setViewport     (m_rendering_settings.m_viewport.m_width, m_rendering_settings.m_viewport.m_height);
-            m_screen_quad_debug.addShader       (m_shader_depth_render);
-            m_screen_quad_debug.addTextureList  (new ArrayList<>(Collections.singletonList(m_peeling_f2b.m_texture_depth[0])),
-                                                 new ArrayList<>(Collections.singletonList("uniform_texture_depth")));
-            m_screen_quad_debug.addUniformFloats(new ArrayList<>(Arrays.asList(m_light.m_camera.m_near_field, m_light.m_camera.m_far_field)),
-                                                 new ArrayList<>(Arrays.asList("uniform_z_near", "uniform_z_far")));
+            m_screen_quad_debug.setViewport         (m_rendering_settings.m_viewport.m_width, m_rendering_settings.m_viewport.m_height);
+            m_screen_quad_debug.addShader           (m_shader_depth_render);
+            m_screen_quad_debug.addUniformTextures  (   new ArrayList<>(Collections.singletonList("uniform_texture_depth")));
+            m_screen_quad_debug.addUniformFloats    (   new ArrayList<>(Arrays.asList(m_light.m_camera.m_near_field, m_light.m_camera.m_far_field)),
+                                                        new ArrayList<>(Arrays.asList("uniform_z_near", "uniform_z_far")));
         }
 
         setupText();
@@ -144,12 +141,15 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
             m_camera.computeViewMatrix();
         }
         {
-            //m_rendering_forward.draw(m_rendering_settings, m_text_manager, m_meshes, m_light, m_camera, m_ubo_matrices[0]);
-            m_peeling_f2b.draw(m_rendering_settings, m_text_manager, m_meshes, m_light, m_camera, m_ubo_matrices[0]);
+            m_rendering_forward.draw(m_rendering_settings, m_text_manager, m_meshes, m_light, m_camera, m_ubo_matrices[0]);
+            //m_peeling_f2b.draw(m_rendering_settings, m_text_manager, m_meshes, m_light, m_camera, m_ubo_matrices[0]);
         }
         {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            m_screen_quad_output.setTextureList (new ArrayList<>(Collections.singletonList(m_rendering_forward.m_texture_color[0])));
             m_screen_quad_output.draw();
+            m_screen_quad_debug.setTextureList  (new ArrayList<>(Collections.singletonList(m_light.m_texture_depth[0])));
             m_screen_quad_debug.draw();
         }
         m_text_manager.draw(m_rendering_settings);

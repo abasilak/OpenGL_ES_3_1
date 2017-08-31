@@ -1,4 +1,4 @@
-#version 310 es
+#include "version.h"
 
 layout(location = 0) in vec3 position;
 

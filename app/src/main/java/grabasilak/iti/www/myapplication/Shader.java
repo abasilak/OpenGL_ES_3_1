@@ -18,11 +18,28 @@ package grabasilak.iti.www.myapplication;
 import android.content.Context;
 import android.util.Log;
 
-import java.io.ByteArrayOutputStream;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 
-import static android.opengl.GLES31.*;
+import static android.opengl.GLES31.GL_COMPILE_STATUS;
+import static android.opengl.GLES31.GL_FRAGMENT_SHADER;
+import static android.opengl.GLES31.GL_LINK_STATUS;
+import static android.opengl.GLES31.GL_VERTEX_SHADER;
+import static android.opengl.GLES31.glAttachShader;
+import static android.opengl.GLES31.glCompileShader;
+import static android.opengl.GLES31.glCreateProgram;
+import static android.opengl.GLES31.glCreateShader;
+import static android.opengl.GLES31.glDeleteProgram;
+import static android.opengl.GLES31.glDeleteShader;
+import static android.opengl.GLES31.glDetachShader;
+import static android.opengl.GLES31.glGetProgramInfoLog;
+import static android.opengl.GLES31.glGetProgramiv;
+import static android.opengl.GLES31.glGetShaderInfoLog;
+import static android.opengl.GLES31.glGetShaderiv;
+import static android.opengl.GLES31.glLinkProgram;
+import static android.opengl.GLES31.glShaderSource;
 
 class Shader {
 
@@ -52,22 +69,25 @@ class Shader {
         {
             is =  context.getAssets().open ( "Shaders/" + fileName );
 
-            // Create a buffer that has the same size as the InputStream
-            buffer = new byte[is.available()];
+            String newLine = System.getProperty("line.separator");
+            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+            StringBuilder result = new StringBuilder();
+            String line; boolean flag = false;
+            while ((line = reader.readLine()) != null)
+            {
+                String[] arr = line.split(" ");
+                if(arr.length == 0 )
+                    continue;
 
-            // Read the text file as a stream, into the buffer
-            int k = is.read ( buffer );
-
-            ByteArrayOutputStream os = new ByteArrayOutputStream();
-
-            // Write this buffer to the output stream
-            os.write ( buffer );
-
-            // Close input and output streams
-            os.close();
-            is.close();
-
-            shaderSource = os.toString();
+                if(arr[0].equals("#include"))
+                {
+                    result.append(flag ? newLine: "").append(readShader(context, arr[1].substring(1,arr[1].length()-1)));
+                }
+                else
+                    result.append(flag ? newLine: "").append(line);
+                flag = true;
+            }
+            return result.toString();
         }
         catch ( IOException e)
         {
