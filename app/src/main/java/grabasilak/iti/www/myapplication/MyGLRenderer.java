@@ -194,17 +194,18 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
 
         if(align_to_aabb)
         {
+            float padding = 1.1f;
             // Update Camera
-            m_camera.m_eye[0]   = m_aabb.m_center[0] + dis*2;
-            m_camera.m_eye[1]   = m_aabb.m_center[1] + dis*2;
-            m_camera.m_eye[2]   = m_aabb.m_center[2] + dis*2;
+            m_camera.m_eye[0]   = m_aabb.m_center[0] + dis*padding;
+            m_camera.m_eye[1]   = m_aabb.m_center[1] + dis*padding;
+            m_camera.m_eye[2]   = m_aabb.m_center[2] + dis*padding;
 
             m_camera.m_target[0]= m_aabb.m_center[0];
             m_camera.m_target[1]= m_aabb.m_center[1];
             m_camera.m_target[2]= m_aabb.m_center[2];
 
             // Update Light
-            m_light.m_radius = m_aabb.m_radius/10f;
+            m_light.m_radius = m_aabb.m_radius/50f;
 
             m_light.m_camera.m_eye[0]     = m_aabb.m_center[0] + dis/2;
             m_light.m_camera.m_eye[1]     = m_aabb.m_center[1] + dis/2;

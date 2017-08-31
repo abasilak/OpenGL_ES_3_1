@@ -46,8 +46,8 @@ class Shader {
     private final String    m_name;
     private int             m_program;
 
-    Shader(Context context, String name) {
-
+    Shader(Context context, String name)
+    {
         m_name = name;
         loadProgram(context);
     }
@@ -75,7 +75,7 @@ class Shader {
             String line; boolean flag = false;
             while ((line = reader.readLine()) != null)
             {
-                String[] arr = line.split(" ");
+                String[] arr = line.split("\\s+");
                 if(arr.length == 0 )
                     continue;
 

@@ -37,7 +37,7 @@ class Camera {
         m_up[2] = 0.0f;
 
         m_near_field = 1f;
-        m_far_field  = 100.0f;
+        m_far_field  = 1000.0f;
         m_fov        = 30.0f;
     }
 
