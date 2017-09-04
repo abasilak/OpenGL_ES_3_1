@@ -5,57 +5,51 @@ import android.content.Context;
 import java.util.ArrayList;
 
 import static android.opengl.GLES20.GL_CLAMP_TO_EDGE;
-import static android.opengl.GLES20.GL_COLOR_ATTACHMENT0;
-import static android.opengl.GLES20.GL_COLOR_BUFFER_BIT;
 import static android.opengl.GLES20.GL_DEPTH_ATTACHMENT;
 import static android.opengl.GLES20.GL_DEPTH_BUFFER_BIT;
 import static android.opengl.GLES20.GL_DEPTH_COMPONENT;
-import static android.opengl.GLES20.GL_DEPTH_COMPONENT16;
+import static android.opengl.GLES20.GL_FLOAT;
 import static android.opengl.GLES20.GL_FRAMEBUFFER;
 import static android.opengl.GLES20.GL_NEAREST;
-import static android.opengl.GLES20.GL_RGBA;
 import static android.opengl.GLES20.GL_TEXTURE_2D;
 import static android.opengl.GLES20.GL_TEXTURE_MAG_FILTER;
 import static android.opengl.GLES20.GL_TEXTURE_MIN_FILTER;
 import static android.opengl.GLES20.GL_TEXTURE_WRAP_S;
 import static android.opengl.GLES20.GL_TEXTURE_WRAP_T;
-import static android.opengl.GLES20.GL_UNSIGNED_BYTE;
-import static android.opengl.GLES20.GL_UNSIGNED_INT;
 import static android.opengl.GLES20.glBindFramebuffer;
 import static android.opengl.GLES20.glBindTexture;
 import static android.opengl.GLES20.glClear;
+import static android.opengl.GLES20.glColorMask;
 import static android.opengl.GLES20.glFramebufferTexture2D;
 import static android.opengl.GLES20.glGenFramebuffers;
 import static android.opengl.GLES20.glGenTextures;
 import static android.opengl.GLES20.glTexImage2D;
 import static android.opengl.GLES20.glTexParameteri;
-import static android.opengl.GLES30.GL_SRGB8_ALPHA8;
-import static android.opengl.GLES30.glDrawBuffers;
-import static android.opengl.GLES30.glInvalidateFramebuffer;
+import static android.opengl.GLES30.GL_DEPTH_COMPONENT32F;
 
-class RenderingForward extends Rendering
+public class ShadowMapping extends Rendering
 {
-    private Shader  m_shader_forward_rendering;
+    private Shader  m_shader_shadow_mapping;
 
     private int []	m_fbo           = new int[1];
     private int []	m_texture_depth = new int[1];
 
-    RenderingForward(Context context, Viewport viewport)
+    ShadowMapping(Context context, Viewport viewport)
     {
-        super("Forward Rendering");
+        super("Shadow Mapping");
 
-        m_shader_forward_rendering = new Shader(context, context.getString(R.string.SHADER_FORWARD_RENDERING_NAME));
+        m_shader_shadow_mapping = new Shader(context, context.getString(R.string.SHADER_SHADOW_MAPPING_NAME));
 
         createFBO(viewport);
     }
 
     boolean createFBO(Viewport viewport)
     {
-        // Texture Depth
+        // Create Shadow Texture
         glGenTextures(1, m_texture_depth, 0);
         glBindTexture(GL_TEXTURE_2D, m_texture_depth[0]);
         {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, viewport.m_width, viewport.m_height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, null);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, viewport.m_width, viewport.m_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, null);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -63,24 +57,11 @@ class RenderingForward extends Rendering
         }
         glBindTexture(GL_TEXTURE_2D, 0);
 
-        // Texture Color
-        glGenTextures(1, m_texture_color, 0);
-        glBindTexture(GL_TEXTURE_2D, m_texture_color[0]);
-        {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, viewport.m_width, viewport.m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, null);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        }
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        // Framebuffer Object
+        // Create Shadow Framebuffer
         glGenFramebuffers(1, m_fbo, 0);
         glBindFramebuffer(GL_FRAMEBUFFER, m_fbo[0]);
         {
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_texture_depth[0], 0);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_texture_color[0], 0);
         }
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -93,25 +74,21 @@ class RenderingForward extends Rendering
     {
         rendering_settings.m_fps.start();
         {
-            rendering_settings.m_viewport.setViewport();
-
             glBindFramebuffer(GL_FRAMEBUFFER, m_fbo[0]);
             {
-                glDrawBuffers(1, new int[]{GL_COLOR_ATTACHMENT0}, 0);
-                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                glClear(GL_DEPTH_BUFFER_BIT);
+                glColorMask(false, false, false, false);
                 {
                     for (int i = 0; i < meshes.size(); i++)
-                        meshes.get(i).draw(m_shader_forward_rendering.getProgram(), camera, light, ubo_matrices);
+                        meshes.get(i).drawSimple(m_shader_shadow_mapping.getProgram(), camera);
                 }
-
-                light.render(camera);
+                glColorMask(true, true, true, true);
             }
-            glInvalidateFramebuffer(GL_FRAMEBUFFER, 1, new int[]{GL_DEPTH_ATTACHMENT}, 0);
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }
         rendering_settings.m_fps.end();
 
-        text_manager.addText(new TextObject(m_name + ": " + String.format("%.2f", rendering_settings.m_fps.getTime()), 50, rendering_settings.m_viewport.m_height - 100));
+        text_manager.addText(new TextObject(m_name + ": " + String.format("%.2f", rendering_settings.m_fps.getTime()), 50, rendering_settings.m_viewport.m_height - 50));
     }
 
     int getTextureDepth()

@@ -8,39 +8,19 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 
-import static android.opengl.GLES20.GL_DEPTH_BUFFER_BIT;
-import static android.opengl.GLES20.glClear;
-import static android.opengl.GLES20.glColorMask;
 import static android.opengl.GLES20.glDepthMask;
-import static android.opengl.GLES31.GL_CLAMP_TO_EDGE;
-import static android.opengl.GLES31.GL_DEPTH_ATTACHMENT;
-import static android.opengl.GLES31.GL_DEPTH_COMPONENT;
-import static android.opengl.GLES31.GL_DEPTH_COMPONENT32F;
 import static android.opengl.GLES31.GL_DYNAMIC_DRAW;
-import static android.opengl.GLES31.GL_FLOAT;
-import static android.opengl.GLES31.GL_FRAMEBUFFER;
-import static android.opengl.GLES31.GL_NEAREST;
-import static android.opengl.GLES31.GL_TEXTURE_2D;
-import static android.opengl.GLES31.GL_TEXTURE_MAG_FILTER;
-import static android.opengl.GLES31.GL_TEXTURE_MIN_FILTER;
-import static android.opengl.GLES31.GL_TEXTURE_WRAP_S;
-import static android.opengl.GLES31.GL_TEXTURE_WRAP_T;
 import static android.opengl.GLES31.GL_UNIFORM_BUFFER;
 import static android.opengl.GLES31.glBindBuffer;
 import static android.opengl.GLES31.glBindBufferBase;
-import static android.opengl.GLES31.glBindFramebuffer;
-import static android.opengl.GLES31.glBindTexture;
 import static android.opengl.GLES31.glBufferData;
 import static android.opengl.GLES31.glBufferSubData;
-import static android.opengl.GLES31.glFramebufferTexture2D;
 import static android.opengl.GLES31.glGenBuffers;
-import static android.opengl.GLES31.glGenFramebuffers;
-import static android.opengl.GLES31.glGenTextures;
-import static android.opengl.GLES31.glTexImage2D;
-import static android.opengl.GLES31.glTexParameteri;
 import static grabasilak.iti.www.myapplication.Util.m_sizeofV4;
 
-class Light {
+class Light
+{
+    public  ShadowMapping m_shadow_mapping;
 
     private boolean	    m_is_rendered;
     private boolean	    m_is_animated;
@@ -54,15 +34,11 @@ class Light {
     private float []    m_color                     = new float[3];
             float []    m_initial_position          = new float[3];
 
-
-    private Shader      m_shader_shadow_map;
-    private Shader      m_shader_render;
+    private Shader      m_shader_simple_rendering;
 
     private FloatBuffer m_buffer;
     private int []	    m_ubo = new int[1];
 
-    private int	[]      m_fbo = new int[1];
-            int	[]      m_texture_depth = new int[1];
     private final int   m_texture_size;
 
     Camera              m_camera;
@@ -77,7 +53,7 @@ class Light {
         m_att_quadratic		    = 0.0032f;
         m_spotlight_cutoff	    = 30.0f;
 
-        m_texture_size = context.getResources().getInteger(R.integer.SHADOW_MAP_SIZE);
+        m_texture_size          = context.getResources().getInteger(R.integer.SHADOW_MAP_SIZE);
 
         m_is_rendered           = true;
         m_is_spotlight          = true;
@@ -91,15 +67,40 @@ class Light {
 
         m_viewport = new Viewport(0, 0, m_texture_size, m_texture_size);
         m_viewport.setAspectRatio();
-        createFBO();
 
-        m_shader_shadow_map     = new Shader(context, context.getString(R.string.SHADER_SHADOW_RENDERING_NAME));
-        m_shader_render         = new Shader(context, context.getString(R.string.SHADER_SIMPLE_RENDERING_NAME));
-        m_sphere                = new Mesh  (context, "sphere.obj");
+        m_shadow_mapping            = new ShadowMapping(context, m_viewport);
+
+        m_shader_simple_rendering   = new Shader(context, context.getString(R.string.SHADER_SIMPLE_RENDERING_NAME));
+        m_sphere                    = new Mesh  (context, "sphere.obj");
 
         m_sphere.m_materials.get(0).m_diffuse[0] = 0.9f;
         m_sphere.m_materials.get(0).m_diffuse[1] = 0.9f;
         m_sphere.m_materials.get(0).m_diffuse[2] = 0.f;
+    }
+
+    void animation()
+    {
+        m_is_animated = true;
+
+        m_camera.m_world_rot_angle += 0.3f;
+        if (m_camera.m_world_rot_angle > 360.0f)
+            m_camera.m_world_rot_angle -= 360.0f;
+        m_camera.computeWorldMatrix();
+
+        float [] old_pos = new float [4];
+        old_pos[0] = m_initial_position[0];
+        old_pos[1] = m_initial_position[1];
+        old_pos[2] = m_initial_position[2];
+        old_pos[3] = 1.0f;
+
+        float [] new_pos = new float [4];
+        Matrix.multiplyMV(new_pos, 0, m_camera.m_world_matrix, 0, old_pos, 0);
+
+        m_camera.m_eye[0] = new_pos[0];
+        m_camera.m_eye[1] = new_pos[1];
+        m_camera.m_eye[2] = new_pos[2];
+
+        updateUBO();
     }
 
     void createUBO()
@@ -195,57 +196,7 @@ class Light {
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
     }
 
-    private void createFBO()
-    {
-        // Create Shadow Texture
-        glGenTextures(1, m_texture_depth, 0);
-        glBindTexture(GL_TEXTURE_2D, m_texture_depth[0]);
-        {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, m_viewport.m_width, m_viewport.m_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, null);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        }
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        // Create Shadow Framebuffer
-        glGenFramebuffers(1, m_fbo, 0);
-        glBindFramebuffer(GL_FRAMEBUFFER, m_fbo[0]);
-        {
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_texture_depth[0], 0);
-        }
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-        RenderingSettings.checkFramebufferStatus();
-    }
-
-    void animation()
-    {
-        m_is_animated = true;
-
-        m_camera.m_world_rot_angle += 0.3f;
-        if (m_camera.m_world_rot_angle > 360.0f)
-            m_camera.m_world_rot_angle -= 360.0f;
-        m_camera.computeWorldMatrix();
-
-        float [] old_pos = new float [4];
-        old_pos[0] = m_initial_position[0];
-        old_pos[1] = m_initial_position[1];
-        old_pos[2] = m_initial_position[2];
-        old_pos[3] = 1.0f;
-
-        float [] new_pos = new float [4];
-        Matrix.multiplyMV(new_pos, 0, m_camera.m_world_matrix, 0, old_pos, 0);
-
-        m_camera.m_eye[0] = new_pos[0];
-        m_camera.m_eye[1] = new_pos[1];
-        m_camera.m_eye[2] = new_pos[2];
-
-        updateUBO();
-    }
-
-    void draw(RenderingSettings rendering_settings, TextManager text_manager, ArrayList<Mesh> meshes)
+    void draw(RenderingSettings rendering_settings, TextManager text_manager, ArrayList<Mesh> meshes, Light light, Camera camera, int ubo_matrices)
     {
         // Shadow Mapping
         if (m_is_animated)
@@ -254,26 +205,10 @@ class Light {
 
             if(m_casts_shadows)
             {
-                rendering_settings.m_fps.start();
-                {
-                    m_camera.computeViewMatrix();
-                    m_viewport.setViewport();
+                m_camera.computeViewMatrix();
+                m_viewport.setViewport();
 
-                    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo[0]);
-                    {
-                        glClear(GL_DEPTH_BUFFER_BIT);
-                        glColorMask(false, false, false, false);
-                        {
-                            for (int i = 0; i < meshes.size(); i++)
-                                meshes.get(i).drawSimple(m_shader_shadow_map.getProgram(), m_camera);
-                        }
-                        glColorMask(true, true, true, true);
-                    }
-                    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-                }
-                rendering_settings.m_fps.end();
-
-                text_manager.addText(new TextObject("Shadow: " + String.format("%.2f", rendering_settings.m_fps.getTime()), 50, rendering_settings.m_viewport.m_height - 50));
+                m_shadow_mapping.draw(rendering_settings, text_manager, meshes, null, m_camera, 0);
             }
         }
     }
@@ -287,7 +222,7 @@ class Light {
                 m_sphere.setIdentity();
                 m_sphere.translate(m_camera.m_eye[0], m_camera.m_eye[1], m_camera.m_eye[2]);
                 m_sphere.scale(m_radius, m_radius, m_radius);
-                m_sphere.drawSimple(m_shader_render.getProgram(), camera);
+                m_sphere.drawSimple(m_shader_simple_rendering.getProgram(), camera);
             }
             glDepthMask(true);
         }

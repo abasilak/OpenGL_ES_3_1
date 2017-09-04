@@ -32,26 +32,27 @@ import static android.opengl.GLES30.GL_DEPTH_COMPONENT32F;
 import static android.opengl.GLES30.GL_SRGB8_ALPHA8;
 import static android.opengl.GLES30.glDrawBuffers;
 
-public class PeelingF2B
+class PeelingF2B extends Rendering
 {
-    private Shader  m_shader_render;
+    private Shader  m_shader_f2b_peeling;
 
     private int     m_currID, m_prevID;
-    private int     m_passes, m_total_passes;
+    private int     m_passes;
 
     private int []	m_fbo           = new int[2];
             int []	m_texture_depth = new int[2];
-            int []	m_texture_color = new int[1];
 
-    PeelingF2B(Context context, RenderingSettings rendering_settings)
+    PeelingF2B(Context context, Viewport viewport)
     {
-        m_total_passes  = 1;
-        m_shader_render = new Shader(context, context.getString(R.string.SHADER_F2B_RENDERING_NAME));
+        super("F2B Peeling");
 
-        createFBO(rendering_settings);
+        m_total_passes       = 1;
+        m_shader_f2b_peeling = new Shader(context, context.getString(R.string.SHADER_F2B_PEELING_NAME));
+
+        createFBO(viewport);
     }
 
-    private boolean createFBO(RenderingSettings rendering_settings)
+    boolean  createFBO(Viewport viewport)
     {
         glGenFramebuffers(2, m_fbo, 0);
         glGenTextures(2, m_texture_depth, 0);
@@ -60,7 +61,7 @@ public class PeelingF2B
         // Texture Color
         glBindTexture(GL_TEXTURE_2D, m_texture_color[0]);
         {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, rendering_settings.m_viewport.m_width, rendering_settings.m_viewport.m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, null);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, viewport.m_width, viewport.m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, null);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -73,7 +74,7 @@ public class PeelingF2B
             // Texture Depth
             glBindTexture(GL_TEXTURE_2D, m_texture_depth[i]);
             {
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, rendering_settings.m_viewport.m_width, rendering_settings.m_viewport.m_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, null);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, viewport.m_width, viewport.m_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, null);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -94,7 +95,7 @@ public class PeelingF2B
         return true;
     }
 
-    void draw(RenderingSettings rendering_settings, TextManager text_manager, ArrayList<Mesh> meshes, Light light, Camera camera, int ubo_matrices)
+    void     draw(RenderingSettings rendering_settings, TextManager text_manager, ArrayList<Mesh> meshes, Light light, Camera camera, int ubo_matrices)
     {
         rendering_settings.m_fps.start();
         {
@@ -112,7 +113,7 @@ public class PeelingF2B
                     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
                     for (int i = 0; i < meshes.size(); i++)
-                        meshes.get(i).peel(m_shader_render.getProgram(), camera, light, ubo_matrices, m_texture_depth[m_prevID], rendering_settings);
+                        meshes.get(i).peel(m_shader_f2b_peeling.getProgram(), camera, light, ubo_matrices, m_texture_depth[m_prevID], rendering_settings);
                 }
                 glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -120,6 +121,11 @@ public class PeelingF2B
             }
         }
         rendering_settings.m_fps.end();
-        text_manager.addText(new TextObject("F2B: " + String.format("%.2f", rendering_settings.m_fps.getTime()), 50, rendering_settings.m_viewport.m_height - 100));
+        text_manager.addText(new TextObject(m_name + ": " + String.format("%.2f", rendering_settings.m_fps.getTime()), 50, rendering_settings.m_viewport.m_height - 100));
+    }
+
+    int getTextureDepth()
+    {
+        return m_texture_depth[m_currID];
     }
 }

@@ -20,11 +20,9 @@ public class Material {
         m_glossiness        = 10.f;
         m_refraction_index  = 1.f;
 
-        m_diffuse [0] = m_diffuse [1] = m_diffuse [2] = 0.0f;
+        m_diffuse [0] = m_diffuse [1] = m_diffuse [2] = 1.0f;
         m_specular[0] = m_specular[1] = m_specular[2] = 1.f;
         m_emission[0] = m_emission[1] = m_emission[2] = 0.f;
-
-        m_diffuse [2] = 1.0f;
     }
 
     Material(String name)

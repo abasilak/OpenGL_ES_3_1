@@ -55,6 +55,9 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
     private Context             m_context;
     private TextManager         m_text_manager;
 
+    private int                  m_current_rendering_method;
+    private ArrayList<Rendering> m_rendering_methods;
+
     private RenderingForward    m_rendering_forward;
     private PeelingF2B          m_peeling_f2b;
 
@@ -82,10 +85,16 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         m_meshes    = new ArrayList<>();
         m_light     = new Light(m_context);
 
+        m_rendering_methods = new ArrayList<>();
+
         addMesh(m_context.getString(R.string.MESH_NAME), true);
 
-        m_rendering_forward   = new RenderingForward(m_context, m_rendering_settings);
-        m_peeling_f2b         = new PeelingF2B      (m_context, m_rendering_settings);
+        m_rendering_forward   = new RenderingForward(m_context, m_rendering_settings.m_viewport);
+        m_peeling_f2b         = new PeelingF2B      (m_context, m_rendering_settings.m_viewport);
+
+        m_rendering_methods.add(m_rendering_forward);
+        m_rendering_methods.add(m_peeling_f2b);
+        m_current_rendering_method = 0;
 
         m_shader_color_render = new Shader(m_context, m_context.getString(R.string.SHADER_TEXTURE_COLOR_RENDERING_NAME));
         m_shader_depth_render = new Shader(m_context, m_context.getString(R.string.SHADER_TEXTURE_DEPTH_RENDERING_NAME));
@@ -134,25 +143,24 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         m_text_manager.clear();
         {
             m_light.animation();
-            m_light.draw(m_rendering_settings, m_text_manager, m_meshes);
+            m_light.draw(m_rendering_settings, m_text_manager, m_meshes, null, null, 0);
         }
         {
             m_camera.computeWorldMatrix();
             m_camera.computeViewMatrix();
         }
         {
-            m_rendering_forward.draw(m_rendering_settings, m_text_manager, m_meshes, m_light, m_camera, m_ubo_matrices[0]);
-            //m_peeling_f2b.draw(m_rendering_settings, m_text_manager, m_meshes, m_light, m_camera, m_ubo_matrices[0]);
+            m_rendering_methods.get(m_current_rendering_method).draw(m_rendering_settings, m_text_manager, m_meshes, m_light, m_camera, m_ubo_matrices[0]);
         }
         {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            m_screen_quad_output.setTextureList (new ArrayList<>(Collections.singletonList(m_rendering_forward.m_texture_color[0])));
+            m_screen_quad_output.setTextureList (new ArrayList<>(Collections.singletonList(m_rendering_methods.get(m_current_rendering_method).m_texture_color[0])));
             m_screen_quad_output.draw();
-            m_screen_quad_debug.setTextureList  (new ArrayList<>(Collections.singletonList(m_light.m_texture_depth[0])));
+            m_screen_quad_debug.setTextureList  (new ArrayList<>(Collections.singletonList(m_light.m_shadow_mapping.getTextureDepth())));
             m_screen_quad_debug.draw();
         }
-        m_text_manager.draw(m_rendering_settings);
+        m_text_manager.draw(m_rendering_settings.m_viewport);
 
         RenderingSettings.checkGlError("onDrawFrame");
     }
@@ -207,9 +215,9 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
             // Update Light
             m_light.m_radius = m_aabb.m_radius/50f;
 
-            m_light.m_camera.m_eye[0]     = m_aabb.m_center[0] + dis/2;
+            m_light.m_camera.m_eye[0]     = m_aabb.m_center[0] + dis/4;
             m_light.m_camera.m_eye[1]     = m_aabb.m_center[1] + dis/2;
-            m_light.m_camera.m_eye[2]     = m_aabb.m_center[2] + dis/2;
+            m_light.m_camera.m_eye[2]     = m_aabb.m_center[2] + dis/4;
 
             m_light.m_camera.m_target[0]  = m_aabb.m_center[0];
             m_light.m_camera.m_target[1]  = m_aabb.m_center[1];
