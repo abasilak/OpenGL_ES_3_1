@@ -84,7 +84,7 @@ void main()
 	vec3	normal_wcs			= normalize	(fs_in.normal_wcs_v);
 
 	// [SPOTLIGHT]
-	float	attenuation_factor	= (is_spot_light) ? lightGetAttenuation(dist_to_light) : 1.0f;
+	float	attenuation_factor	= (is_spot_light) ? lightGetAttenuation(dist_to_light)                      : 1.0f;
 	float	spot_angle_factor	= (is_spot_light) ? lightGetSpot(-vertex_to_light_wcs, light_direction_wcs) : 1.0f;
 
 	// [DIFFUSE]

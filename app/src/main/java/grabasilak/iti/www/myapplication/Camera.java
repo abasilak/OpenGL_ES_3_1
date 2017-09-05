@@ -37,7 +37,7 @@ class Camera {
         m_up[2] = 0.0f;
 
         m_near_field = 1f;
-        m_far_field  = 1000.0f;
+        m_far_field  = 100.0f;
         m_fov        = 30.0f;
     }
 
@@ -54,5 +54,9 @@ class Camera {
     void computeProjectionMatrix(float aspect_ratio)
     {
         Matrix.perspectiveM(m_projection_matrix, 0, m_fov, aspect_ratio, m_near_field, m_far_field);
+    }
+    void computeProjectionMatrix(int width, int height, int depth)
+    {
+        Matrix.orthoM(m_projection_matrix, 0, 0f, width, 0.0f, height, 0.0f, depth);// need fixing
     }
 }

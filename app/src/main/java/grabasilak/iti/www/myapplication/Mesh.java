@@ -63,12 +63,13 @@ import static android.opengl.GLES31.glVertexAttribPointer;
 import static grabasilak.iti.www.myapplication.Util.m_sizeofM44;
 import static grabasilak.iti.www.myapplication.Util.m_sizeofV4;
 
-class Mesh {
-                AABB            m_aabb;
+class Mesh
+{
+            ArrayList  <Material>       m_materials;
+    private ArrayList  <String>         m_material_filenames;
+    private ArrayList  <String>         m_material_used_names;
 
-    ArrayList  <Material>       m_materials;
-    ArrayList  <String>         m_material_filenames;
-    ArrayList  <String>         m_material_used_names;
+    AABB                        m_aabb;
 
     // Vertex Array Object
     private final int []        m_vao             = new int[1];
@@ -161,7 +162,7 @@ class Mesh {
         float[] pvmw_matrix = new float[16];
 
         Matrix.multiplyMM(vmw_matrix , 0, camera.m_view_matrix       , 0, m_model_matrix  , 0 );
-        Matrix.multiplyMM(pvmw_matrix, 0, camera.m_projection_matrix , 0, vmw_matrix , 0 );
+        Matrix.multiplyMM(pvmw_matrix, 0, camera.m_projection_matrix , 0, vmw_matrix      , 0 );
 
         // Add program to OpenGL environment
         glUseProgram(program);
@@ -171,6 +172,30 @@ class Mesh {
             glUniform3f(glGetUniformLocation(program, "uniform_color"), m_materials.get(0).m_diffuse[0], m_materials.get(0).m_diffuse[1], m_materials.get(0).m_diffuse[2]);
 
             // 3. DRAW
+            glBindVertexArray ( m_vao[0] );
+            {
+                glDrawRangeElements(GL_TRIANGLES, 0, m_indices_data.length, m_indices_data.length, GL_UNSIGNED_SHORT, 0);
+            }
+            glBindVertexArray ( 0 );
+        }
+        glUseProgram(0);
+    }
+
+    void drawShadowMapping(int program, Camera camera, Light light)
+    {
+        float[] mw_matrix   = new float[16];
+        float[] vmw_matrix  = new float[16];
+        float[] pvmw_matrix = new float[16];
+
+        Matrix.multiplyMM(mw_matrix  , 0, camera.m_world_matrix              , 0, m_model_matrix, 0 );
+        Matrix.multiplyMM(vmw_matrix , 0, light.m_camera.m_view_matrix       , 0, mw_matrix     , 0 );
+        Matrix.multiplyMM(pvmw_matrix, 0, light.m_camera.m_projection_matrix , 0, vmw_matrix    , 0 );
+
+        // Add program to OpenGL environment
+        glUseProgram(program);
+        {
+            glUniformMatrix4fv(glGetUniformLocation(program, "uniform_mvp"  ), 1, false, pvmw_matrix, 0);
+
             glBindVertexArray ( m_vao[0] );
             {
                 glDrawRangeElements(GL_TRIANGLES, 0, m_indices_data.length, m_indices_data.length, GL_UNSIGNED_SHORT, 0);

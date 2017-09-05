@@ -20,11 +20,11 @@ import static grabasilak.iti.www.myapplication.Util.m_sizeofV4;
 
 class Light
 {
-    public  ShadowMapping m_shadow_mapping;
+    ShadowMapping m_shadow_mapping;
 
     private boolean	    m_is_rendered;
     private boolean	    m_is_animated;
-    private boolean	    m_is_spotlight;
+            boolean	    m_is_spotlight;
     private boolean	    m_casts_shadows;
     private float	    m_spotlight_cutoff;
 
@@ -39,8 +39,6 @@ class Light
     private FloatBuffer m_buffer;
     private int []	    m_ubo = new int[1];
 
-    private final int   m_texture_size;
-
     Camera              m_camera;
     Viewport            m_viewport;
     private Mesh        m_sphere;
@@ -48,12 +46,12 @@ class Light
 
     Light(Context context)
     {
+        int m_texture_size      = context.getResources().getInteger(R.integer.SHADOW_MAP_SIZE);
+
         m_att_constant		    = 1.0f;
         m_att_linear		    = 0.01f;
         m_att_quadratic		    = 0.0032f;
         m_spotlight_cutoff	    = 30.0f;
-
-        m_texture_size          = context.getResources().getInteger(R.integer.SHADOW_MAP_SIZE);
 
         m_is_rendered           = true;
         m_is_spotlight          = true;
@@ -196,9 +194,8 @@ class Light
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
     }
 
-    void draw(RenderingSettings rendering_settings, TextManager text_manager, ArrayList<Mesh> meshes, Light light, Camera camera, int ubo_matrices)
+    void draw(RenderingSettings rendering_settings, TextManager text_manager, ArrayList<Mesh> meshes, Camera camera)
     {
-        // Shadow Mapping
         if (m_is_animated)
         {
             m_is_animated = false;
@@ -208,7 +205,7 @@ class Light
                 m_camera.computeViewMatrix();
                 m_viewport.setViewport();
 
-                m_shadow_mapping.draw(rendering_settings, text_manager, meshes, null, m_camera, 0);
+                m_shadow_mapping.draw(rendering_settings, text_manager, meshes, this, camera, 0);
             }
         }
     }

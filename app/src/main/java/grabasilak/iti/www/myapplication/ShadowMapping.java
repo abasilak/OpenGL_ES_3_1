@@ -27,7 +27,7 @@ import static android.opengl.GLES20.glTexImage2D;
 import static android.opengl.GLES20.glTexParameteri;
 import static android.opengl.GLES30.GL_DEPTH_COMPONENT32F;
 
-public class ShadowMapping extends Rendering
+class ShadowMapping extends Rendering
 {
     private Shader  m_shader_shadow_mapping;
 
@@ -80,7 +80,7 @@ public class ShadowMapping extends Rendering
                 glColorMask(false, false, false, false);
                 {
                     for (int i = 0; i < meshes.size(); i++)
-                        meshes.get(i).drawSimple(m_shader_shadow_mapping.getProgram(), camera);
+                        meshes.get(i).drawShadowMapping(m_shader_shadow_mapping.getProgram(), camera, light);
                 }
                 glColorMask(true, true, true, true);
             }

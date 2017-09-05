@@ -143,7 +143,7 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         m_text_manager.clear();
         {
             m_light.animation();
-            m_light.draw(m_rendering_settings, m_text_manager, m_meshes, null, null, 0);
+            m_light.draw(m_rendering_settings, m_text_manager, m_meshes, m_camera);
         }
         {
             m_camera.computeWorldMatrix();
@@ -174,7 +174,10 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         m_screen_quad_debug.setViewport(width, height);
 
         m_camera.computeProjectionMatrix(m_rendering_settings.m_viewport.getAspectRatio());
-        m_light.m_camera.computeProjectionMatrix(m_light.m_viewport.getAspectRatio());
+//        if(m_light.m_is_spotlight)
+            m_light.m_camera.computeProjectionMatrix(m_light.m_viewport.getAspectRatio());
+   //     else
+     //       m_light.m_camera.computeProjectionMatrix(50, 50);
 
         RenderingSettings.checkGlError("onSurfaceChanged");
     }
@@ -214,6 +217,7 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
 
             // Update Light
             m_light.m_radius = m_aabb.m_radius/50f;
+            //m_light.m_camera.computeProjectionMatrix((int)m_aabb.m_radius, (int)m_aabb.m_radius, (int)m_aabb.m_radius);
 
             m_light.m_camera.m_eye[0]     = m_aabb.m_center[0] + dis/4;
             m_light.m_camera.m_eye[1]     = m_aabb.m_center[1] + dis/2;
