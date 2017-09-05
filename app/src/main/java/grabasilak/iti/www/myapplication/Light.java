@@ -82,7 +82,7 @@ class Light
         m_radius = aabb.m_radius/50f;
 
         m_camera.m_eye[0]     = aabb.m_center[0] + dis/4;
-        m_camera.m_eye[1]     = aabb.m_center[1] + dis/2;
+        m_camera.m_eye[1]     = aabb.m_center[1] + dis/4;
         m_camera.m_eye[2]     = aabb.m_center[2] + dis/4;
 
         m_camera.m_target[0]  = aabb.m_center[0];

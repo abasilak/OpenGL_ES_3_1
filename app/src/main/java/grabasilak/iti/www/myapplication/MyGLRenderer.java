@@ -1,15 +1,8 @@
 package grabasilak.iti.www.myapplication;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.opengl.GLES31;
 import android.opengl.GLSurfaceView;
-import android.opengl.GLUtils;
-import android.util.Log;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -22,15 +15,9 @@ import static android.opengl.GLES20.GL_CCW;
 import static android.opengl.GLES20.GL_COLOR_BUFFER_BIT;
 import static android.opengl.GLES20.GL_CULL_FACE;
 import static android.opengl.GLES20.GL_DEPTH_BUFFER_BIT;
-import static android.opengl.GLES20.GL_TEXTURE_2D;
-import static android.opengl.GLES20.GL_TEXTURE_MAG_FILTER;
-import static android.opengl.GLES20.GL_TEXTURE_MIN_FILTER;
-import static android.opengl.GLES20.glBindTexture;
 import static android.opengl.GLES20.glClear;
 import static android.opengl.GLES20.glCullFace;
 import static android.opengl.GLES20.glFrontFace;
-import static android.opengl.GLES20.glGenTextures;
-import static android.opengl.GLES20.glTexParameteri;
 import static android.opengl.GLES31.GL_DEPTH_TEST;
 import static android.opengl.GLES31.GL_DYNAMIC_DRAW;
 import static android.opengl.GLES31.GL_LEQUAL;
@@ -241,34 +228,7 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
     {
         // Create our text manager
         m_text_manager = new TextManager(m_context);
-
-        InputStream istr;
-        Bitmap bmp = null;
-        try {
-            istr = m_context.getAssets().open("Font/font.png");
-            bmp = BitmapFactory.decodeStream(istr);
-        }
-        catch (IOException e) {
-            // handle exception
-            Log.d("LOADING FILE", "FILE LOADED UNSUCCESSFULLY !");
-        }
-
-        int[] texturenames = new int[1];
-        glGenTextures(1, texturenames, 0);
-        glBindTexture(GL_TEXTURE_2D, texturenames[0]);
-        {
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GLES31.GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GLES31.GL_LINEAR);
-            GLUtils.texImage2D(GL_TEXTURE_2D, 0, bmp, 0);
-            glBindTexture(GL_TEXTURE_2D, 0);
-        }
-        assert bmp != null;
-        bmp.recycle();
-
-        // Tell our text manager to use index 1 of textures loaded
-        m_text_manager.setTextureID(texturenames[0]);
-
-        // Pass the uniform scale
+        m_text_manager.m_texture.load(m_context, "Font/font.png");
         m_text_manager.setUniformscale(1);
     }
 }

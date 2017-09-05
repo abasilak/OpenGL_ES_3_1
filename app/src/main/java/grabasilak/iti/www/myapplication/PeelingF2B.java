@@ -112,8 +112,8 @@ class PeelingF2B extends Rendering
                     glDrawBuffers(1, new int[]{GL_COLOR_ATTACHMENT0}, 0);
                     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-                    for (int i = 0; i < meshes.size(); i++)
-                        meshes.get(i).peel(m_shader_f2b_peeling.getProgram(), camera, lights, ubo_matrices, m_texture_depth[m_prevID], rendering_settings);
+                    for (Mesh mesh: meshes)
+                        mesh.peel(m_shader_f2b_peeling.getProgram(), camera, lights, ubo_matrices, m_texture_depth[m_prevID], rendering_settings);
                 }
                 glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -127,7 +127,7 @@ class PeelingF2B extends Rendering
         ));
     }
 
-    int getTextureDepth()
+    int      getTextureDepth()
     {
         return m_texture_depth[m_currID];
     }

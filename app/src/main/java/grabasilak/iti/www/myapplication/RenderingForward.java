@@ -100,8 +100,8 @@ class RenderingForward extends Rendering
                 glDrawBuffers(1, new int[]{GL_COLOR_ATTACHMENT0}, 0);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
                 {
-                    for (int i = 0; i < meshes.size(); i++)
-                        meshes.get(i).draw(m_shader_forward_rendering.getProgram(), camera, lights, ubo_matrices);
+                    for (Mesh mesh: meshes)
+                        mesh.draw(m_shader_forward_rendering.getProgram(), camera, lights, ubo_matrices);
                 }
 
                 for (Light light: lights)

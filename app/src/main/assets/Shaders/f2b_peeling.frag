@@ -61,24 +61,13 @@ layout(location = 0) out vec4 out_frag_color;
 #include "shadow_mapping.h"
 #include "phong_shading.h"
 
-float		uniform_z_near = 1.;
-float		uniform_z_far = 100.;
-
-float LinearizeDepth(float depth)
-{
-    float z = depth * 2.0 - 1.0; // Back to NDC
-    return (2.0 * uniform_z_near * uniform_z_far) / (uniform_z_far + uniform_z_near - z * (uniform_z_far - uniform_z_near));
-}
-
 void main()
 {
     vec2 coords = gl_FragCoord.xy/vec2(uniform_resolution);
     float depth = texture(uniform_textures.depth, coords).r;
 	if(gl_FragCoord.z <= depth)
 	{
-		out_frag_color  = vec4(vec3(LinearizeDepth(gl_FragCoord.z)/uniform_z_far), 1.0f);
-		return;
-		//discard;
+		discard;
     }
 
 	// [TEXTURES]

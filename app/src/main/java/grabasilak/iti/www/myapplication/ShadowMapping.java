@@ -11,6 +11,7 @@ import static android.opengl.GLES20.GL_DEPTH_COMPONENT;
 import static android.opengl.GLES20.GL_FLOAT;
 import static android.opengl.GLES20.GL_FRAMEBUFFER;
 import static android.opengl.GLES20.GL_NEAREST;
+import static android.opengl.GLES20.GL_NONE;
 import static android.opengl.GLES20.GL_TEXTURE_2D;
 import static android.opengl.GLES20.GL_TEXTURE_MAG_FILTER;
 import static android.opengl.GLES20.GL_TEXTURE_MIN_FILTER;
@@ -25,6 +26,7 @@ import static android.opengl.GLES20.glGenFramebuffers;
 import static android.opengl.GLES20.glGenTextures;
 import static android.opengl.GLES20.glTexImage2D;
 import static android.opengl.GLES20.glTexParameteri;
+import static android.opengl.GLES30.glDrawBuffers;
 import static android.opengl.GLES31.GL_DEPTH_COMPONENT32F;
 
 class ShadowMapping extends Rendering
@@ -76,11 +78,12 @@ class ShadowMapping extends Rendering
         {
             glBindFramebuffer(GL_FRAMEBUFFER, m_fbo[0]);
             {
+                glDrawBuffers(1, new int[]{GL_NONE}, 0);
                 glClear(GL_DEPTH_BUFFER_BIT);
                 glColorMask(false, false, false, false);
                 {
-                    for (int i = 0; i < meshes.size(); i++)
-                        meshes.get(i).drawShadowMapping(m_shader_shadow_mapping.getProgram(), camera, lights.get(0));
+                    for (Mesh mesh: meshes)
+                        mesh.drawShadowMapping(m_shader_shadow_mapping.getProgram(), camera, lights.get(0));
                 }
                 glColorMask(true, true, true, true);
             }

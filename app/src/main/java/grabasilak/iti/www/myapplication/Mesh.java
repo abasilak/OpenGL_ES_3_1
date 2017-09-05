@@ -29,6 +29,10 @@ import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 import java.util.ArrayList;
 
+import static android.opengl.GLES20.GL_TEXTURE0;
+import static android.opengl.GLES20.GL_TEXTURE1;
+import static android.opengl.GLES20.GL_TEXTURE2;
+import static android.opengl.GLES20.GL_TEXTURE3;
 import static android.opengl.GLES20.GL_TEXTURE5;
 import static android.opengl.GLES20.glUniform2i;
 import static android.opengl.GLES20.glUniform3f;
@@ -279,11 +283,35 @@ class Mesh
                         break;
                     }
 
+                if (material.m_diffuse_tex.m_loaded)
+                {
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_2D, material.m_diffuse_tex.m_id);
+                }
+
+                if (material.m_normal_tex.m_loaded)
+                {
+                    glActiveTexture(GL_TEXTURE1);
+                    glBindTexture(GL_TEXTURE_2D, material.m_normal_tex.m_id);
+                }
+
+                if (material.m_specular_tex.m_loaded)
+                {
+                    glActiveTexture(GL_TEXTURE2);
+                    glBindTexture(GL_TEXTURE_2D, material.m_specular_tex.m_id);
+                }
+
+                if (material.m_emission_tex.m_loaded)
+                {
+                    glActiveTexture(GL_TEXTURE3);
+                    glBindTexture(GL_TEXTURE_2D, material.m_emission_tex.m_id);
+                }
+
                 //material_has_tex_loaded
-                material_data[0 ] = 0;
-                material_data[1 ] = 0;
-                material_data[2 ] = 0;
-                material_data[3 ] = 0;
+                material_data[0 ] = material.m_diffuse_tex.m_loaded  ? 1 : 0;
+                material_data[1 ] = material.m_normal_tex.m_loaded   ? 1 : 0;
+                material_data[2 ] = material.m_specular_tex.m_loaded ? 1 : 0;
+                material_data[3 ] = material.m_emission_tex.m_loaded ? 1 : 0;
                 //material_diffuse_opacity
                 material_data[4 ] = material.m_diffuse[0];
                 material_data[5 ] = material.m_diffuse[1];
@@ -293,7 +321,7 @@ class Mesh
                 material_data[8 ] = material.m_specular[0];
                 material_data[9 ] = material.m_specular[1];
                 material_data[10] = material.m_specular[2];
-                material_data[11] = material.m_glossiness;
+                material_data[11] = material.m_gloss;
                 //material_emission
                 material_data[12] = material.m_emission[0];
                 material_data[13] = material.m_emission[1];
@@ -317,6 +345,17 @@ class Mesh
 
                 start += end;
             }
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, 0);
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, 0);
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_2D, 0);
+            glActiveTexture(GL_TEXTURE3);
+            glBindTexture(GL_TEXTURE_2D, 0);
+            glActiveTexture(GL_TEXTURE4);
+            glBindTexture(GL_TEXTURE_2D, 0);
         }
         glUseProgram(0);
     }
@@ -414,7 +453,7 @@ class Mesh
                 material_data[8 ] = material.m_specular[0];
                 material_data[9 ] = material.m_specular[1];
                 material_data[10] = material.m_specular[2];
-                material_data[11] = material.m_glossiness;
+                material_data[11] = material.m_gloss;
                 //material_emission
                 material_data[12] = material.m_emission[0];
                 material_data[13] = material.m_emission[1];
@@ -466,12 +505,12 @@ class Mesh
         }
 
         try {
-            for(int i=0; i< m_material_filenames.size(); i++)
+            for(int i=0; i < m_material_filenames.size(); i++)
             {
                 is = context.getAssets().open("Materials/" + m_material_filenames.get(i));
                 in = new BufferedReader(new InputStreamReader(is));
 
-                loadMaterial(in);
+                loadMaterial(in, context);
 
                 in.close();
 
@@ -591,7 +630,7 @@ class Mesh
         m_aabb.computeRadius();
     }
 
-    private void loadMaterial(BufferedReader in) throws IOException
+    private void loadMaterial(BufferedReader in, Context context) throws IOException
     {
         String   Line;              // Stores ever line we read!
         String[] Blocks;            // Stores string fragments after the split!!
@@ -630,13 +669,28 @@ class Mesh
                     m_materials.get(m_materials.size()-1).m_refraction_index = Float.parseFloat(Blocks[1]);
                     break;
                 case "Ns":
-                    m_materials.get(m_materials.size()-1).m_glossiness = Float.parseFloat(Blocks[1]);
+                    m_materials.get(m_materials.size()-1).m_gloss = Float.parseFloat(Blocks[1]);
                     break;
                 case "d":
                     m_materials.get(m_materials.size()-1).m_opacity    = Float.parseFloat(Blocks[1]);
                     break;
                 case "Tr":
                     m_materials.get(m_materials.size()-1).m_opacity    = 1.f - Float.parseFloat(Blocks[1]);
+                    break;
+                case "map_Ka":
+                    //m_materials.get(m_materials.size()-1).m_ambient_tex = Blocks[1];
+                    break;
+                case "map_Kd":
+                    m_materials.get(m_materials.size()-1).m_diffuse_tex.load(context, "Materials/" + Blocks[1]);
+                    break;
+                case "map_Ks":
+                    m_materials.get(m_materials.size()-1).m_specular_tex.load(context, "Materials/" + Blocks[1]);
+                    break;
+                case "map_Ke":
+                    m_materials.get(m_materials.size()-1).m_emission_tex.load(context, "Materials/" + Blocks[1]);
+                    break;
+                case "map_bump":
+                    m_materials.get(m_materials.size()-1).m_normal_tex.load(context, "Materials/" + Blocks[1]);
                     break;
             }
         }

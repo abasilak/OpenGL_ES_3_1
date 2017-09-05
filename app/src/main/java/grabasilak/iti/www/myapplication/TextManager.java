@@ -70,9 +70,9 @@ public class TextManager {
     private final int []        m_uvs_vbo         = new int[1];
     private final int []        m_indices_vbo     = new int[1];
 
-	private int texturenr;
+	public Texture m_texture;
 
-	private float uniformscale;
+	private float 	uniformscale;
 
     private static int[] l_size = {36,29,30,34,25,25,34,33,
 								   11,20,31,24,48,35,39,29,
@@ -97,7 +97,7 @@ public class TextManager {
 		indices 		= new short[10];
 
 		// init as 0 as default
-		texturenr = 0;
+		m_texture		= new Texture();
 
 		m_x = 50;
 		m_y = 50;
@@ -115,11 +115,6 @@ public class TextManager {
 	{
         if(m_enabled)
 		    txtcollection.add(obj);
-	}
-
-	public void setTextureID(int val)
-	{
-		texturenr = val;
 	}
 
 	public void AddCharRenderInformation(float[] vec, float[] cs, float[] uv, short[] indi)
@@ -341,7 +336,7 @@ public class TextManager {
                 glUniform1i(glGetUniformLocation(m_shader_render.getProgram(), "font_texture"), 0);
 
                 GLES31.glActiveTexture(GLES31.GL_TEXTURE0);
-                GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, texturenr);
+                GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, m_texture.m_id);
 
                 // 3. DRAW
                 glBindVertexArray(m_vao[0]);
