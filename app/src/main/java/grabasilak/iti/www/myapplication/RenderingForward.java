@@ -89,7 +89,7 @@ class RenderingForward extends Rendering
         return true;
     }
 
-    void draw(RenderingSettings rendering_settings, TextManager text_manager, ArrayList<Mesh> meshes, Light light, Camera camera, int ubo_matrices)
+    void draw(RenderingSettings rendering_settings, TextManager text_manager, ArrayList<Mesh> meshes, ArrayList<Light> lights, Camera camera, int ubo_matrices)
     {
         rendering_settings.m_fps.start();
         {
@@ -101,17 +101,20 @@ class RenderingForward extends Rendering
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
                 {
                     for (int i = 0; i < meshes.size(); i++)
-                        meshes.get(i).draw(m_shader_forward_rendering.getProgram(), camera, light, ubo_matrices);
+                        meshes.get(i).draw(m_shader_forward_rendering.getProgram(), camera, lights, ubo_matrices);
                 }
 
-                light.render(camera);
+                for (Light light: lights)
+                    light.render(camera);
             }
             glInvalidateFramebuffer(GL_FRAMEBUFFER, 1, new int[]{GL_DEPTH_ATTACHMENT}, 0);
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }
         rendering_settings.m_fps.end();
 
-        text_manager.addText(new TextObject(m_name + ": " + String.format("%.2f", rendering_settings.m_fps.getTime()), 50, rendering_settings.m_viewport.m_height - 100));
+        text_manager.addText(new TextObject(m_name + ": " + String.format("%.2f", rendering_settings.m_fps.getTime()),  text_manager.m_x,
+                rendering_settings.m_viewport.m_height - text_manager.m_y*(text_manager.txtcollection.size()+1)
+        ));
     }
 
     int getTextureDepth()

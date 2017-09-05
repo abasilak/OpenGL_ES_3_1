@@ -95,7 +95,7 @@ class PeelingF2B extends Rendering
         return true;
     }
 
-    void     draw(RenderingSettings rendering_settings, TextManager text_manager, ArrayList<Mesh> meshes, Light light, Camera camera, int ubo_matrices)
+    void     draw(RenderingSettings rendering_settings, TextManager text_manager, ArrayList<Mesh> meshes, ArrayList<Light> lights, Camera camera, int ubo_matrices)
     {
         rendering_settings.m_fps.start();
         {
@@ -113,7 +113,7 @@ class PeelingF2B extends Rendering
                     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
                     for (int i = 0; i < meshes.size(); i++)
-                        meshes.get(i).peel(m_shader_f2b_peeling.getProgram(), camera, light, ubo_matrices, m_texture_depth[m_prevID], rendering_settings);
+                        meshes.get(i).peel(m_shader_f2b_peeling.getProgram(), camera, lights, ubo_matrices, m_texture_depth[m_prevID], rendering_settings);
                 }
                 glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -121,7 +121,10 @@ class PeelingF2B extends Rendering
             }
         }
         rendering_settings.m_fps.end();
-        text_manager.addText(new TextObject(m_name + ": " + String.format("%.2f", rendering_settings.m_fps.getTime()), 50, rendering_settings.m_viewport.m_height - 100));
+
+        text_manager.addText(new TextObject(m_name + ": " + String.format("%.2f", rendering_settings.m_fps.getTime()),  text_manager.m_x,
+                rendering_settings.m_viewport.m_height - text_manager.m_y*(text_manager.txtcollection.size()+1)
+        ));
     }
 
     int getTextureDepth()

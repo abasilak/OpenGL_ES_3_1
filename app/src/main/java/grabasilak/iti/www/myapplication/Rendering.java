@@ -15,6 +15,6 @@ public abstract class Rendering
     }
 
     abstract boolean     createFBO(Viewport viewport);
-    abstract void        draw     (RenderingSettings rendering_settings, TextManager text_manager, ArrayList<Mesh> meshes, Light light, Camera camera, int ubo_matrices);
+    abstract void        draw     (RenderingSettings rendering_settings, TextManager text_manager, ArrayList<Mesh> meshes, ArrayList<Light> lights, Camera camera, int ubo_matrices);
     abstract int         getTextureDepth();
 }

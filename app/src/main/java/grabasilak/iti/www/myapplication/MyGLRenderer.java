@@ -49,7 +49,7 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
 
             AABB                m_aabb;
             Camera              m_camera;
-    private Light               m_light;
+    private ArrayList<Light>    m_lights;
     private ArrayList<Mesh>     m_meshes;
 
     private Context             m_context;
@@ -83,9 +83,11 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         m_aabb      = new AABB();
         m_camera    = new Camera();
         m_meshes    = new ArrayList<>();
-        m_light     = new Light(m_context);
-
+        m_lights    = new ArrayList<>();
         m_rendering_methods = new ArrayList<>();
+
+        Light light = new Light(m_context);
+        m_lights.add(light);
 
         addMesh(m_context.getString(R.string.MESH_NAME), true);
 
@@ -110,7 +112,7 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
             m_screen_quad_debug.setViewport         (m_rendering_settings.m_viewport.m_width, m_rendering_settings.m_viewport.m_height);
             m_screen_quad_debug.addShader           (m_shader_depth_render);
             m_screen_quad_debug.addUniformTextures  (   new ArrayList<>(Collections.singletonList("uniform_texture_depth")));
-            m_screen_quad_debug.addUniformFloats    (   new ArrayList<>(Arrays.asList(m_light.m_camera.m_near_field, m_light.m_camera.m_far_field)),
+            m_screen_quad_debug.addUniformFloats    (   new ArrayList<>(Arrays.asList(m_camera.m_near_field, m_camera.m_far_field)),
                                                         new ArrayList<>(Arrays.asList("uniform_z_near", "uniform_z_far")));
         }
 
@@ -142,22 +144,25 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
     {
         m_text_manager.clear();
         {
-            m_light.animation();
-            m_light.draw(m_rendering_settings, m_text_manager, m_meshes, m_camera);
-        }
-        {
             m_camera.computeWorldMatrix();
             m_camera.computeViewMatrix();
         }
         {
-            m_rendering_methods.get(m_current_rendering_method).draw(m_rendering_settings, m_text_manager, m_meshes, m_light, m_camera, m_ubo_matrices[0]);
+            for (Light light: m_lights)
+            {
+                light.animation();
+                light.draw(m_rendering_settings, m_text_manager, m_meshes, m_camera);
+            }
+        }
+        {
+            m_rendering_methods.get(m_current_rendering_method).draw(m_rendering_settings, m_text_manager, m_meshes, m_lights, m_camera, m_ubo_matrices[0]);
         }
         {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             m_screen_quad_output.setTextureList (new ArrayList<>(Collections.singletonList(m_rendering_methods.get(m_current_rendering_method).m_texture_color[0])));
             m_screen_quad_output.draw();
-            m_screen_quad_debug.setTextureList  (new ArrayList<>(Collections.singletonList(m_light.m_shadow_mapping.getTextureDepth())));
+            m_screen_quad_debug.setTextureList  (new ArrayList<>(Collections.singletonList(m_lights.get(0).m_shadow_mapping.getTextureDepth())));
             m_screen_quad_debug.draw();
         }
         m_text_manager.draw(m_rendering_settings.m_viewport);
@@ -175,7 +180,8 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
 
         m_camera.computeProjectionMatrix(m_rendering_settings.m_viewport.getAspectRatio());
 //        if(m_light.m_is_spotlight)
-            m_light.m_camera.computeProjectionMatrix(m_light.m_viewport.getAspectRatio());
+        for (Light light: m_lights)
+            light.m_camera.computeProjectionMatrix(light.m_viewport.getAspectRatio());
    //     else
      //       m_light.m_camera.computeProjectionMatrix(50, 50);
 
@@ -215,22 +221,8 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
             m_camera.m_target[1]= m_aabb.m_center[1];
             m_camera.m_target[2]= m_aabb.m_center[2];
 
-            // Update Light
-            m_light.m_radius = m_aabb.m_radius/50f;
-            //m_light.m_camera.computeProjectionMatrix((int)m_aabb.m_radius, (int)m_aabb.m_radius, (int)m_aabb.m_radius);
-
-            m_light.m_camera.m_eye[0]     = m_aabb.m_center[0] + dis/4;
-            m_light.m_camera.m_eye[1]     = m_aabb.m_center[1] + dis/2;
-            m_light.m_camera.m_eye[2]     = m_aabb.m_center[2] + dis/4;
-
-            m_light.m_camera.m_target[0]  = m_aabb.m_center[0];
-            m_light.m_camera.m_target[1]  = m_aabb.m_center[1];
-            m_light.m_camera.m_target[2]  = m_aabb.m_center[2];
-
-            m_light.m_initial_position[0] = m_light.m_camera.m_eye[0];
-            m_light.m_initial_position[1] = m_light.m_camera.m_eye[1];
-            m_light.m_initial_position[2] = m_light.m_camera.m_eye[2];
-            m_light.createUBO();
+            for (Light light: m_lights)
+                light.init(m_aabb, dis);
         }
     }
 

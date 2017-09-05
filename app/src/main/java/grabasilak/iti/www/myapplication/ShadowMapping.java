@@ -25,7 +25,7 @@ import static android.opengl.GLES20.glGenFramebuffers;
 import static android.opengl.GLES20.glGenTextures;
 import static android.opengl.GLES20.glTexImage2D;
 import static android.opengl.GLES20.glTexParameteri;
-import static android.opengl.GLES30.GL_DEPTH_COMPONENT32F;
+import static android.opengl.GLES31.GL_DEPTH_COMPONENT32F;
 
 class ShadowMapping extends Rendering
 {
@@ -70,7 +70,7 @@ class ShadowMapping extends Rendering
         return true;
     }
 
-    void draw(RenderingSettings rendering_settings, TextManager text_manager, ArrayList<Mesh> meshes, Light light, Camera camera, int ubo_matrices)
+    void draw(RenderingSettings rendering_settings, TextManager text_manager, ArrayList<Mesh> meshes, ArrayList<Light> lights, Camera camera, int ubo_matrices)
     {
         rendering_settings.m_fps.start();
         {
@@ -80,7 +80,7 @@ class ShadowMapping extends Rendering
                 glColorMask(false, false, false, false);
                 {
                     for (int i = 0; i < meshes.size(); i++)
-                        meshes.get(i).drawShadowMapping(m_shader_shadow_mapping.getProgram(), camera, light);
+                        meshes.get(i).drawShadowMapping(m_shader_shadow_mapping.getProgram(), camera, lights.get(0));
                 }
                 glColorMask(true, true, true, true);
             }
@@ -88,7 +88,9 @@ class ShadowMapping extends Rendering
         }
         rendering_settings.m_fps.end();
 
-        text_manager.addText(new TextObject(m_name + ": " + String.format("%.2f", rendering_settings.m_fps.getTime()), 50, rendering_settings.m_viewport.m_height - 50));
+        text_manager.addText(new TextObject(m_name + ": " + String.format("%.2f", rendering_settings.m_fps.getTime()),  text_manager.m_x,
+                                                                                                                        rendering_settings.m_viewport.m_height - text_manager.m_y*(text_manager.txtcollection.size()+1)
+        ));
     }
 
     int getTextureDepth()

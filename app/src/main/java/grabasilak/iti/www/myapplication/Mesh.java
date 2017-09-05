@@ -98,9 +98,9 @@ class Mesh
     private FloatBuffer         l_matrix_buffer;
     private FloatBuffer         m_material_buffer;
 
-    private ArrayList<float[]>      m_vertices;
-    private ArrayList<float[]>      m_normals;
-    private ArrayList<float[]>      m_uvs;
+    private ArrayList<float[]>  m_vertices;
+    private ArrayList<float[]>  m_normals;
+    private ArrayList<float[]>  m_uvs;
     private ArrayList<ArrayList<Primitive>> m_primitive_groups;
 
     private float m_vertices_data[];
@@ -205,7 +205,7 @@ class Mesh
         glUseProgram(0);
     }
 
-    void draw(int program, Camera camera, Light light, int UBO_Matrices)
+    void draw(int program, Camera camera, ArrayList<Light> lights, int UBO_Matrices)
     {
         float[] mw_matrix       = new float[16];
         float[] lmw_matrix      = new float[16];
@@ -216,8 +216,8 @@ class Mesh
         Matrix.transposeM(m_normal_matrix, 0, inv_w_matrix, 0 );
         Matrix.multiplyMM(mw_matrix, 0, camera.m_world_matrix, 0, m_model_matrix, 0 );
 
-        Matrix.multiplyMM(lmw_matrix    , 0, light.m_camera.m_view_matrix       , 0, mw_matrix  , 0 );
-        Matrix.multiplyMM(m_light_matrix, 0, light.m_camera.m_projection_matrix , 0, lmw_matrix , 0 );
+        Matrix.multiplyMM(lmw_matrix    , 0, lights.get(0).m_camera.m_view_matrix       , 0, mw_matrix  , 0 );
+        Matrix.multiplyMM(m_light_matrix, 0, lights.get(0).m_camera.m_projection_matrix , 0, lmw_matrix , 0 );
 
         glBindBuffer(GL_UNIFORM_BUFFER, UBO_Matrices);
         {
@@ -263,7 +263,7 @@ class Mesh
 
             // bind the depth texture to the active texture unit
             glActiveTexture(GL_TEXTURE4);
-            glBindTexture(GL_TEXTURE_2D, light.m_shadow_mapping.getTextureDepth());
+            glBindTexture(GL_TEXTURE_2D, lights.get(0).m_shadow_mapping.getTextureDepth());
 
             // 4. SET UBOs
 
@@ -321,7 +321,7 @@ class Mesh
         glUseProgram(0);
     }
 
-    void peel(int program, Camera camera, Light light, int UBO_Matrices, int m_texture_depth, RenderingSettings rendering_settings)
+    void peel(int program, Camera camera, ArrayList<Light> lights, int UBO_Matrices, int m_texture_depth, RenderingSettings rendering_settings)
     {
         float[] mw_matrix       = new float[16];
         float[] lmw_matrix      = new float[16];
@@ -332,8 +332,8 @@ class Mesh
         Matrix.transposeM(m_normal_matrix, 0, inv_w_matrix, 0 );
         Matrix.multiplyMM(mw_matrix, 0, camera.m_world_matrix, 0, m_model_matrix, 0 );
 
-        Matrix.multiplyMM(lmw_matrix    , 0, light.m_camera.m_view_matrix       , 0, mw_matrix  , 0 );
-        Matrix.multiplyMM(m_light_matrix, 0, light.m_camera.m_projection_matrix , 0, lmw_matrix , 0 );
+        Matrix.multiplyMM(lmw_matrix    , 0, lights.get(0).m_camera.m_view_matrix       , 0, mw_matrix  , 0 );
+        Matrix.multiplyMM(m_light_matrix, 0, lights.get(0).m_camera.m_projection_matrix , 0, lmw_matrix , 0 );
 
         glBindBuffer(GL_UNIFORM_BUFFER, UBO_Matrices);
         {
@@ -382,7 +382,7 @@ class Mesh
 
             // bind the depth texture to the active texture unit
             glActiveTexture(GL_TEXTURE4);
-            glBindTexture(GL_TEXTURE_2D, light.m_shadow_mapping.getTextureDepth());
+            glBindTexture(GL_TEXTURE_2D, lights.get(0).m_shadow_mapping.getTextureDepth());
 
             glActiveTexture(GL_TEXTURE5);
             glBindTexture(GL_TEXTURE_2D, m_texture_depth);
@@ -438,7 +438,6 @@ class Mesh
 
                 start += end;
             }
-
         }
         glUseProgram(0);
     }

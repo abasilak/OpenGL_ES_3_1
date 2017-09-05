@@ -38,13 +38,14 @@ import static android.opengl.GLES31.glVertexAttribPointer;
 
 public class TextManager {
 
-    private boolean	m_enabled = true;
+			int		m_x;
+			int		m_y;
+	private Shader  m_shader_render;
+	private boolean	m_enabled = true;
 
 	private static final float RI_TEXT_UV_BOX_WIDTH = 0.125f;
 	private static final float RI_TEXT_WIDTH = 32.0f;
 	private static final float RI_TEXT_SPACESIZE = 20f;
-
-    private Shader m_shader_render;
 
 	private FloatBuffer vertexBuffer;
 	private FloatBuffer textureBuffer;
@@ -82,12 +83,12 @@ public class TextManager {
 								   0,38,39,12,36,34,0,0,
 								   0,38,0,0,0,0,0,0};
 
-    private Vector<TextObject> txtcollection;
+    Vector<TextObject> txtcollection;
 
 	public TextManager(Context context)
 	{
 		// Create our container
-		txtcollection = new Vector<>();
+		txtcollection 	= new Vector<>();
 
 		// Create the arrays
 		vecs 			= new float[3 * 10];
@@ -97,6 +98,9 @@ public class TextManager {
 
 		// init as 0 as default
 		texturenr = 0;
+
+		m_x = 50;
+		m_y = 50;
 
         m_shader_render = new Shader(context, context.getString(R.string.SHADER_TEXT_RENDERING_NAME));
 	}

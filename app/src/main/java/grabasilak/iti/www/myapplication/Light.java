@@ -7,14 +7,15 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
 
-import static android.opengl.GLES20.glDepthMask;
 import static android.opengl.GLES31.GL_DYNAMIC_DRAW;
 import static android.opengl.GLES31.GL_UNIFORM_BUFFER;
 import static android.opengl.GLES31.glBindBuffer;
 import static android.opengl.GLES31.glBindBufferBase;
 import static android.opengl.GLES31.glBufferData;
 import static android.opengl.GLES31.glBufferSubData;
+import static android.opengl.GLES31.glDepthMask;
 import static android.opengl.GLES31.glGenBuffers;
 import static grabasilak.iti.www.myapplication.Util.m_sizeofV4;
 
@@ -74,6 +75,27 @@ class Light
         m_sphere.m_materials.get(0).m_diffuse[0] = 0.9f;
         m_sphere.m_materials.get(0).m_diffuse[1] = 0.9f;
         m_sphere.m_materials.get(0).m_diffuse[2] = 0.f;
+    }
+
+    void init(AABB aabb, float dis)
+    {
+        m_radius = aabb.m_radius/50f;
+
+        m_camera.m_eye[0]     = aabb.m_center[0] + dis/4;
+        m_camera.m_eye[1]     = aabb.m_center[1] + dis/2;
+        m_camera.m_eye[2]     = aabb.m_center[2] + dis/4;
+
+        m_camera.m_target[0]  = aabb.m_center[0];
+        m_camera.m_target[1]  = aabb.m_center[1];
+        m_camera.m_target[2]  = aabb.m_center[2];
+
+        m_initial_position[0] = m_camera.m_eye[0];
+        m_initial_position[1] = m_camera.m_eye[1];
+        m_initial_position[2] = m_camera.m_eye[2];
+
+        //m_light.m_camera.computeProjectionMatrix((int)aabb.m_radius, (int)aabb.m_radius, (int)aabb.m_radius);
+
+        createUBO();
     }
 
     void animation()
@@ -205,7 +227,7 @@ class Light
                 m_camera.computeViewMatrix();
                 m_viewport.setViewport();
 
-                m_shadow_mapping.draw(rendering_settings, text_manager, meshes, this, camera, 0);
+                m_shadow_mapping.draw(rendering_settings, text_manager, meshes, new ArrayList<>(Collections.singletonList(this)), camera, 0);
             }
         }
     }
