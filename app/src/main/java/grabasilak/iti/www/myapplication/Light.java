@@ -72,9 +72,9 @@ class Light
         m_shader_simple_rendering   = new Shader(context, context.getString(R.string.SHADER_SIMPLE_RENDERING_NAME));
         m_sphere                    = new Mesh  (context, "sphere.obj");
 
-        m_sphere.m_materials.get(0).m_diffuse[0] = 0.9f;
-        m_sphere.m_materials.get(0).m_diffuse[1] = 0.9f;
-        m_sphere.m_materials.get(0).m_diffuse[2] = 0.f;
+        m_sphere.m_mtl_materials.get(0).m_diffuse[0] = 0.9f;
+        m_sphere.m_mtl_materials.get(0).m_diffuse[1] = 0.9f;
+        m_sphere.m_mtl_materials.get(0).m_diffuse[2] = 0.f;
     }
 
     void init(AABB aabb, float dis)

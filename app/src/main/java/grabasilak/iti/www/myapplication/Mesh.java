@@ -69,9 +69,8 @@ import static grabasilak.iti.www.myapplication.Util.m_sizeofV4;
 
 class Mesh
 {
-            ArrayList  <Material>       m_materials;
-    private ArrayList  <String>         m_material_filenames;
-    private ArrayList  <String>         m_material_used_names;
+            ArrayList  <Material> m_mtl_materials;
+    private ArrayList  <String>   m_mtl_filenames;
 
     AABB                        m_aabb;
 
@@ -105,28 +104,28 @@ class Mesh
     private ArrayList<float[]>  m_vertices;
     private ArrayList<float[]>  m_normals;
     private ArrayList<float[]>  m_uvs;
-    private ArrayList<ArrayList<Primitive>> m_primitive_groups;
 
     private float m_vertices_data[];
     private float m_normals_data[];
     private float m_uvs_data[];
     private short m_indices_data[];
 
+    private ArrayList<MeshObject>           m_objects;
+    private ArrayList<MeshPrimitiveGroup>   m_primitive_groups;
+
     Mesh(Context context, String name)
     {
         m_aabb              = new AABB();
 
-        m_materials         = new ArrayList<>();
-        m_materials.add(new Material());
-
-        m_material_filenames  = new ArrayList<>();
-        m_material_used_names = new ArrayList<>();
+        m_mtl_filenames = new ArrayList<>();
+        m_mtl_materials = new ArrayList<>();
+        m_mtl_materials.add(new Material());
 
         m_vertices          = new ArrayList<>();
         m_normals           = new ArrayList<>();
         m_uvs               = new ArrayList<>();
 
-        m_primitive_groups = new ArrayList<>();
+        m_primitive_groups  = new ArrayList<>();
 
         mw_matrix_buffer    = ByteBuffer.allocateDirect ( m_sizeofM44    ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
         v_matrix_buffer     = ByteBuffer.allocateDirect ( m_sizeofM44    ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
@@ -173,7 +172,7 @@ class Mesh
         {
             glUniformMatrix4fv(glGetUniformLocation(program, "uniform_mvp"  ), 1, false, pvmw_matrix, 0);
 
-            glUniform3f(glGetUniformLocation(program, "uniform_color"), m_materials.get(0).m_diffuse[0], m_materials.get(0).m_diffuse[1], m_materials.get(0).m_diffuse[2]);
+            glUniform3f(glGetUniformLocation(program, "uniform_color"), m_mtl_materials.get(0).m_diffuse[0], m_mtl_materials.get(0).m_diffuse[1], m_mtl_materials.get(0).m_diffuse[2]);
 
             // 3. DRAW
             glBindVertexArray ( m_vao[0] );
@@ -214,7 +213,6 @@ class Mesh
         float[] mw_matrix       = new float[16];
         float[] lmw_matrix      = new float[16];
         float[] inv_w_matrix    = new float[16];
-        float[] material_data   = new float[16];
 
         Matrix.invertM(inv_w_matrix, 0, camera.m_world_matrix, 0 );
         Matrix.transposeM(m_normal_matrix, 0, inv_w_matrix, 0 );
@@ -274,63 +272,35 @@ class Mesh
             int start=0, end;
             for (int i = 0; i < m_primitive_groups.size(); i++)
             {
-                end = m_primitive_groups.get(i).size()*3;
+                end = m_primitive_groups.get(i).m_primitives.size()*3;
 
-                Material material = m_materials.get(0);
-                for(int j=1; j<m_materials.size(); j++)
-                    if(m_materials.get(j).m_name.equals(m_material_used_names.get(i))) {
-                        material = m_materials.get(j);
-                        break;
-                    }
-
-                if (material.m_diffuse_tex.m_loaded)
+                if ( m_primitive_groups.get(i).m_material.m_diffuse_tex.m_loaded)
                 {
                     glActiveTexture(GL_TEXTURE0);
-                    glBindTexture(GL_TEXTURE_2D, material.m_diffuse_tex.m_id);
+                    glBindTexture(GL_TEXTURE_2D,  m_primitive_groups.get(i).m_material.m_diffuse_tex.m_id);
                 }
 
-                if (material.m_normal_tex.m_loaded)
+                if ( m_primitive_groups.get(i).m_material.m_normal_tex.m_loaded)
                 {
                     glActiveTexture(GL_TEXTURE1);
-                    glBindTexture(GL_TEXTURE_2D, material.m_normal_tex.m_id);
+                    glBindTexture(GL_TEXTURE_2D,  m_primitive_groups.get(i).m_material.m_normal_tex.m_id);
                 }
 
-                if (material.m_specular_tex.m_loaded)
+                if ( m_primitive_groups.get(i).m_material.m_specular_tex.m_loaded)
                 {
                     glActiveTexture(GL_TEXTURE2);
-                    glBindTexture(GL_TEXTURE_2D, material.m_specular_tex.m_id);
+                    glBindTexture(GL_TEXTURE_2D,  m_primitive_groups.get(i).m_material.m_specular_tex.m_id);
                 }
 
-                if (material.m_emission_tex.m_loaded)
+                if ( m_primitive_groups.get(i).m_material.m_emission_tex.m_loaded)
                 {
                     glActiveTexture(GL_TEXTURE3);
-                    glBindTexture(GL_TEXTURE_2D, material.m_emission_tex.m_id);
+                    glBindTexture(GL_TEXTURE_2D,  m_primitive_groups.get(i).m_material.m_emission_tex.m_id);
                 }
-
-                //material_has_tex_loaded
-                material_data[0 ] = material.m_diffuse_tex.m_loaded  ? 1 : 0;
-                material_data[1 ] = material.m_normal_tex.m_loaded   ? 1 : 0;
-                material_data[2 ] = material.m_specular_tex.m_loaded ? 1 : 0;
-                material_data[3 ] = material.m_emission_tex.m_loaded ? 1 : 0;
-                //material_diffuse_opacity
-                material_data[4 ] = material.m_diffuse[0];
-                material_data[5 ] = material.m_diffuse[1];
-                material_data[6 ] = material.m_diffuse[2];
-                material_data[7 ] = material.m_opacity;
-                //material_specular_gloss
-                material_data[8 ] = material.m_specular[0];
-                material_data[9 ] = material.m_specular[1];
-                material_data[10] = material.m_specular[2];
-                material_data[11] = material.m_gloss;
-                //material_emission
-                material_data[12] = material.m_emission[0];
-                material_data[13] = material.m_emission[1];
-                material_data[14] = material.m_emission[2];
-                material_data[15] = 0.0f; // not used
 
                 glBindBuffer(GL_UNIFORM_BUFFER, m_ubo[0]);
                 {
-                    m_material_buffer.put (material_data);
+                    m_material_buffer.put (m_primitive_groups.get(i).m_material_data);
                     m_material_buffer.position ( 0 );
                     glBufferSubData(GL_UNIFORM_BUFFER, 0, m_sizeofV4*4, m_material_buffer);
                 }
@@ -365,7 +335,6 @@ class Mesh
         float[] mw_matrix       = new float[16];
         float[] lmw_matrix      = new float[16];
         float[] inv_w_matrix    = new float[16];
-        float[] material_data   = new float[16];
 
         Matrix.invertM(inv_w_matrix, 0, camera.m_world_matrix, 0 );
         Matrix.transposeM(m_normal_matrix, 0, inv_w_matrix, 0 );
@@ -430,39 +399,11 @@ class Mesh
             int start=0, end;
             for (int i = 0; i < m_primitive_groups.size(); i++)
             {
-                end = m_primitive_groups.get(i).size()*3;
-
-                Material material = m_materials.get(0);
-                for(int j=1; j<m_materials.size(); j++)
-                    if(m_materials.get(j).m_name.equals(m_material_used_names.get(i))) {
-                        material = m_materials.get(j);
-                        break;
-                    }
-
-                //material_has_tex_loaded
-                material_data[0 ] = 0;
-                material_data[1 ] = 0;
-                material_data[2 ] = 0;
-                material_data[3 ] = 0;
-                //material_diffuse_opacity
-                material_data[4 ] = material.m_diffuse[0];
-                material_data[5 ] = material.m_diffuse[1];
-                material_data[6 ] = material.m_diffuse[2];
-                material_data[7 ] = material.m_opacity;
-                //material_specular_gloss
-                material_data[8 ] = material.m_specular[0];
-                material_data[9 ] = material.m_specular[1];
-                material_data[10] = material.m_specular[2];
-                material_data[11] = material.m_gloss;
-                //material_emission
-                material_data[12] = material.m_emission[0];
-                material_data[13] = material.m_emission[1];
-                material_data[14] = material.m_emission[2];
-                material_data[15] = 0.0f; // not used
+                end = m_primitive_groups.get(i).m_primitives.size()*3;
 
                 glBindBuffer(GL_UNIFORM_BUFFER, m_ubo[0]);
                 {
-                    m_material_buffer.put (material_data);
+                    m_material_buffer.put (m_primitive_groups.get(i).m_material_data);
                     m_material_buffer.position ( 0 );
                     glBufferSubData(GL_UNIFORM_BUFFER, 0, m_sizeofV4*4, m_material_buffer);
                 }
@@ -489,7 +430,8 @@ class Mesh
         InputStream     is;
         BufferedReader  in;
 
-        try {
+        try
+        {
             is = context.getAssets().open ( "Models/" + name );
             in = new BufferedReader(new InputStreamReader(is));
 
@@ -505,9 +447,9 @@ class Mesh
         }
 
         try {
-            for(int i=0; i < m_material_filenames.size(); i++)
+            for(int i = 0; i < m_mtl_filenames.size(); i++)
             {
-                is = context.getAssets().open("Materials/" + m_material_filenames.get(i));
+                is = context.getAssets().open("Materials/" + m_mtl_filenames.get(i));
                 in = new BufferedReader(new InputStreamReader(is));
 
                 loadMaterial(in, context);
@@ -515,6 +457,18 @@ class Mesh
                 in.close();
 
                 Log.d("LOADING MATERIAL", "MATERIAL LOADED SUCCESSFULLY !");
+            }
+
+            for (int i = 0; i < m_primitive_groups.size(); i++) {
+                Material material = m_mtl_materials.get(0);
+                for (int j = 1; j < m_mtl_materials.size(); j++)
+                    if (m_mtl_materials.get(j).m_name.equals(m_primitive_groups.get(i).m_material_name))
+                    {
+                        material = m_mtl_materials.get(j);
+                        break;
+                    }
+                m_primitive_groups.get(i).m_material = material;
+                m_primitive_groups.get(i).setMaterialData();
             }
         }
         catch (IOException e)
@@ -583,14 +537,15 @@ class Mesh
 
                     if(m_primitive_groups.isEmpty())
                     {
-                        m_primitive_groups.add(new ArrayList<>());
-                        m_material_used_names.add("default");
+                        MeshPrimitiveGroup new_primitive_group = new MeshPrimitiveGroup("default");
+                        m_primitive_groups.add(new_primitive_group);
                     }
 
                     String[] faceParams;
 
                     Primitive primitive = new Primitive();
-                    for (int i = 1; i < Blocks.length; i++) {
+                    for (int i = 1; i < Blocks.length; i++)
+                    {
                         String split_char = "/";
                         if (Blocks[i].contains("//"))
                             split_char = "//";
@@ -598,26 +553,29 @@ class Mesh
                         faceParams = Blocks[i].split(split_char);
 
                         primitive.vertices.add(Integer.parseInt(faceParams[0]) - 1);
-                        if (faceParams.length == 2) {
+                        if (faceParams.length == 2)
+                        {
                             if (!m_uvs.isEmpty())
                                 primitive.uvs.add(Integer.parseInt(faceParams[1]) - 1);
                             else if (!m_normals.isEmpty())
                                 primitive.normals.add(Integer.parseInt(faceParams[1]) - 1);
-                        } else if (faceParams.length == 3) {
+                        }
+                        else if (faceParams.length == 3)
+                        {
                             if (!m_uvs.isEmpty())
                                 primitive.uvs.add(Integer.parseInt(faceParams[1]) - 1);
                             if (!m_normals.isEmpty())
                                 primitive.normals.add(Integer.parseInt(faceParams[2]) - 1);
                         }
                     }
-                    m_primitive_groups.get(m_primitive_groups.size()-1).add(primitive);
+                    m_primitive_groups.get(m_primitive_groups.size()-1).m_primitives.add(primitive);
                     break;
                 case "mtllib":
-                    m_material_filenames.add(Blocks[1]);
+                    m_mtl_filenames.add(Blocks[1]);
                     break;
                 case "usemtl":
-                    m_primitive_groups.add(new ArrayList<>());
-                    m_material_used_names.add(Blocks[1]);
+                    MeshPrimitiveGroup new_primitive_group = new MeshPrimitiveGroup(Blocks[1]);
+                    m_primitive_groups.add(new_primitive_group);
                     break;
             }
         }
@@ -648,54 +606,54 @@ class Mesh
             {
                 case "newmtl":
                     Material new_material = new Material(Blocks[1]);
-                    m_materials.add(new_material);
+                    m_mtl_materials.add(new_material);
                     break;
                 case "Kd":
-                    m_materials.get(m_materials.size()-1).m_diffuse[0] = Float.parseFloat(Blocks[1]);
-                    m_materials.get(m_materials.size()-1).m_diffuse[1] = Float.parseFloat(Blocks[2]);
-                    m_materials.get(m_materials.size()-1).m_diffuse[2] = Float.parseFloat(Blocks[3]);
+                    m_mtl_materials.get(m_mtl_materials.size()-1).m_diffuse[0] = Float.parseFloat(Blocks[1]);
+                    m_mtl_materials.get(m_mtl_materials.size()-1).m_diffuse[1] = Float.parseFloat(Blocks[2]);
+                    m_mtl_materials.get(m_mtl_materials.size()-1).m_diffuse[2] = Float.parseFloat(Blocks[3]);
                     break;
                 case "Ks":
-                    m_materials.get(m_materials.size()-1).m_specular[0] = Float.parseFloat(Blocks[1]);
-                    m_materials.get(m_materials.size()-1).m_specular[1] = Float.parseFloat(Blocks[2]);
-                    m_materials.get(m_materials.size()-1).m_specular[2] = Float.parseFloat(Blocks[3]);
+                    m_mtl_materials.get(m_mtl_materials.size()-1).m_specular[0] = Float.parseFloat(Blocks[1]);
+                    m_mtl_materials.get(m_mtl_materials.size()-1).m_specular[1] = Float.parseFloat(Blocks[2]);
+                    m_mtl_materials.get(m_mtl_materials.size()-1).m_specular[2] = Float.parseFloat(Blocks[3]);
                     break;
                 case "Ke":
-                    m_materials.get(m_materials.size()-1).m_emission[0] = Float.parseFloat(Blocks[1]);
-                    m_materials.get(m_materials.size()-1).m_emission[1] = Float.parseFloat(Blocks[2]);
-                    m_materials.get(m_materials.size()-1).m_emission[2] = Float.parseFloat(Blocks[3]);
+                    m_mtl_materials.get(m_mtl_materials.size()-1).m_emission[0] = Float.parseFloat(Blocks[1]);
+                    m_mtl_materials.get(m_mtl_materials.size()-1).m_emission[1] = Float.parseFloat(Blocks[2]);
+                    m_mtl_materials.get(m_mtl_materials.size()-1).m_emission[2] = Float.parseFloat(Blocks[3]);
                     break;
                 case "Ni":
-                    m_materials.get(m_materials.size()-1).m_refraction_index = Float.parseFloat(Blocks[1]);
+                    m_mtl_materials.get(m_mtl_materials.size()-1).m_refraction_index = Float.parseFloat(Blocks[1]);
                     break;
                 case "Ns":
-                    m_materials.get(m_materials.size()-1).m_gloss = Float.parseFloat(Blocks[1]);
+                    m_mtl_materials.get(m_mtl_materials.size()-1).m_gloss = Float.parseFloat(Blocks[1]);
                     break;
                 case "d":
-                    m_materials.get(m_materials.size()-1).m_opacity    = Float.parseFloat(Blocks[1]);
+                    m_mtl_materials.get(m_mtl_materials.size()-1).m_opacity    = Float.parseFloat(Blocks[1]);
                     break;
                 case "Tr":
-                    m_materials.get(m_materials.size()-1).m_opacity    = 1.f - Float.parseFloat(Blocks[1]);
+                    m_mtl_materials.get(m_mtl_materials.size()-1).m_opacity    = 1.f - Float.parseFloat(Blocks[1]);
                     break;
                 case "map_Ka":
-                    //m_materials.get(m_materials.size()-1).m_ambient_tex = Blocks[1];
+                    //m_mtl_materials.get(m_mtl_materials.size()-1).m_ambient_tex = Blocks[1];
                     break;
                 case "map_Kd":
-                    m_materials.get(m_materials.size()-1).m_diffuse_tex.load(context, "Materials/" + Blocks[1]);
+                    m_mtl_materials.get(m_mtl_materials.size()-1).m_diffuse_tex.load(context, "Textures/" + Blocks[1]);
                     break;
                 case "map_Ks":
-                    m_materials.get(m_materials.size()-1).m_specular_tex.load(context, "Materials/" + Blocks[1]);
+                    m_mtl_materials.get(m_mtl_materials.size()-1).m_specular_tex.load(context, "Textures/" + Blocks[1]);
                     break;
                 case "map_Ke":
-                    m_materials.get(m_materials.size()-1).m_emission_tex.load(context, "Materials/" + Blocks[1]);
+                    m_mtl_materials.get(m_mtl_materials.size()-1).m_emission_tex.load(context, "Textures/" + Blocks[1]);
                     break;
                 case "map_bump":
-                    m_materials.get(m_materials.size()-1).m_normal_tex.load(context, "Materials/" + Blocks[1]);
+                    m_mtl_materials.get(m_mtl_materials.size()-1).m_normal_tex.load(context, "Textures/" + Blocks[1]);
                     break;
             }
         }
 
-        Log.d("MATERIAL DATA", "" + m_materials.size() );
+        Log.d("MATERIAL DATA", "" + m_mtl_materials.size() );
     }
 
     private void fillInBuffers()
@@ -703,8 +661,9 @@ class Mesh
         int total_primitive_size = 0;
 
         for (int i = 0; i < m_primitive_groups.size(); i++)
-            total_primitive_size += m_primitive_groups.get(i).size();
+            total_primitive_size += m_primitive_groups.get(i).m_primitives.size();
 
+        // change it !!!! >@#$@#$@#$
         m_vertices_data = new float[total_primitive_size * 3 * 3];
         if(!m_normals.isEmpty())    m_normals_data  = new float[total_primitive_size * 3 * 3];
         if(!m_uvs.isEmpty())        m_uvs_data      = new float[total_primitive_size * 3 * 2];
@@ -712,9 +671,9 @@ class Mesh
 
         int i=0;
         for(int j = 0; j < m_primitive_groups.size(); j++)
-        for(int k = 0; k < m_primitive_groups.get(j).size(); k++)
+        for(int k = 0; k < m_primitive_groups.get(j).m_primitives.size(); k++)
         {
-            Primitive face = m_primitive_groups.get(j).get(k);
+            Primitive face = m_primitive_groups.get(j).m_primitives.get(k);
             m_vertices_data[i * 9]     = m_vertices.get(face.vertices.get(0))[0];
             m_vertices_data[i * 9 + 1] = m_vertices.get(face.vertices.get(0))[1];
             m_vertices_data[i * 9 + 2] = m_vertices.get(face.vertices.get(0))[2];
@@ -730,9 +689,9 @@ class Mesh
         i=0;
         if(!m_normals.isEmpty())
             for(int j = 0; j < m_primitive_groups.size(); j++)
-                for(int k = 0; k < m_primitive_groups.get(j).size(); k++)
+                for(int k = 0; k < m_primitive_groups.get(j).m_primitives.size(); k++)
                 {
-                    Primitive face = m_primitive_groups.get(j).get(k);
+                    Primitive face = m_primitive_groups.get(j).m_primitives.get(k);
                     m_normals_data[i * 9]     = m_normals.get(face.normals.get(0))[0];
                     m_normals_data[i * 9 + 1] = m_normals.get(face.normals.get(0))[1];
                     m_normals_data[i * 9 + 2] = m_normals.get(face.normals.get(0))[2];
@@ -748,9 +707,9 @@ class Mesh
         i=0;
         if(!m_uvs.isEmpty())
             for(int j = 0; j < m_primitive_groups.size(); j++)
-                for(int k = 0; k < m_primitive_groups.get(j).size(); k++)
+                for(int k = 0; k < m_primitive_groups.get(j).m_primitives.size(); k++)
                 {
-                    Primitive face = m_primitive_groups.get(j).get(k);
+                    Primitive face = m_primitive_groups.get(j).m_primitives.get(k);
                     m_uvs_data[i * 6]     = m_uvs.get(face.uvs.get(0))[0];
                     m_uvs_data[i * 6 + 1] = m_uvs.get(face.uvs.get(0))[1];
                     m_uvs_data[i * 6 + 2] = m_uvs.get(face.uvs.get(1))[0];
@@ -762,7 +721,7 @@ class Mesh
 
         i=0;
         for(int j = 0; j < m_primitive_groups.size(); j++)
-            for(int k = 0; k < m_primitive_groups.get(j).size(); k++)
+            for(int k = 0; k < m_primitive_groups.get(j).m_primitives.size(); k++)
             {
                 m_indices_data[i * 3]     = (short) (i * 3);
                 m_indices_data[i * 3 + 1] = (short) (i * 3 + 1);

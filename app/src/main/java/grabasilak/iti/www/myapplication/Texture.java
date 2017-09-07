@@ -17,10 +17,6 @@ import static android.opengl.GLES20.glBindTexture;
 import static android.opengl.GLES20.glGenTextures;
 import static android.opengl.GLES20.glTexParameteri;
 
-/**
- * Created by Andreas on 05-Sep-17.
- */
-
 public class Texture
 {
     int     m_id;
