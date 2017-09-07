@@ -2,21 +2,16 @@ package grabasilak.iti.www.myapplication;
 
 import java.util.ArrayList;
 
-/**
- * Created by Andreas on 07-Sep-17.
- */
-
 class MeshPrimitiveGroup
 {
     ArrayList<Primitive> m_primitives;
     Material             m_material;
-    String               m_material_name;
+    String               m_material_name = null;
     float[]              m_material_data = new float[16];
 
-    MeshPrimitiveGroup(String name)
+    MeshPrimitiveGroup()
     {
         m_primitives    = new ArrayList<>();
-        m_material_name = name;
     }
 
     void setMaterialData()

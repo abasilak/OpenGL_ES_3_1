@@ -439,14 +439,15 @@ class Mesh
 
             in.close();
 
-            Log.d("LOADING FILE", "FILE LOADED SUCCESSFULLY !");
+            Log.d("LOADING FILE", name + " - FILE LOADED SUCCESSFULLY !");
         }
         catch (IOException e)
         {
             e.printStackTrace();
         }
 
-        try {
+        try
+        {
             for(int i = 0; i < m_mtl_filenames.size(); i++)
             {
                 is = context.getAssets().open("Materials/" + m_mtl_filenames.get(i));
@@ -459,15 +460,18 @@ class Mesh
                 Log.d("LOADING MATERIAL", "MATERIAL LOADED SUCCESSFULLY !");
             }
 
-            for (int i = 0; i < m_primitive_groups.size(); i++) {
+            for (int i = 0; i < m_primitive_groups.size(); i++)
+            {
                 Material material = m_mtl_materials.get(0);
-                for (int j = 1; j < m_mtl_materials.size(); j++)
-                    if (m_mtl_materials.get(j).m_name.equals(m_primitive_groups.get(i).m_material_name))
-                    {
-                        material = m_mtl_materials.get(j);
-                        break;
-                    }
-                m_primitive_groups.get(i).m_material = material;
+                if(m_primitive_groups.get(i).m_material_name != null)
+                    for (int j = 1; j < m_mtl_materials.size(); j++)
+                        if (m_mtl_materials.get(j).m_name.equals(m_primitive_groups.get(i).m_material_name))
+                        {
+                            material = m_mtl_materials.get(j);
+                            break;
+                        }
+                m_primitive_groups.get(i).m_material        = material;
+                m_primitive_groups.get(i).m_material_name   = material.m_name;
                 m_primitive_groups.get(i).setMaterialData();
             }
         }
@@ -535,12 +539,6 @@ class Mesh
                     break;
                 case "f":
 
-                    if(m_primitive_groups.isEmpty())
-                    {
-                        MeshPrimitiveGroup new_primitive_group = new MeshPrimitiveGroup("default");
-                        m_primitive_groups.add(new_primitive_group);
-                    }
-
                     String[] faceParams;
 
                     Primitive primitive = new Primitive();
@@ -555,27 +553,30 @@ class Mesh
                         primitive.vertices.add(Integer.parseInt(faceParams[0]) - 1);
                         if (faceParams.length == 2)
                         {
-                            if (!m_uvs.isEmpty())
-                                primitive.uvs.add(Integer.parseInt(faceParams[1]) - 1);
-                            else if (!m_normals.isEmpty())
+                            //if (!m_uvs.isEmpty())
+                              //  primitive.uvs.add(Integer.parseInt(faceParams[1]) - 1);
+                            //else if (!m_normals.isEmpty())
                                 primitive.normals.add(Integer.parseInt(faceParams[1]) - 1);
                         }
                         else if (faceParams.length == 3)
                         {
-                            if (!m_uvs.isEmpty())
+                            //if (!m_uvs.isEmpty())
                                 primitive.uvs.add(Integer.parseInt(faceParams[1]) - 1);
-                            if (!m_normals.isEmpty())
+                            //if (!m_normals.isEmpty())
                                 primitive.normals.add(Integer.parseInt(faceParams[2]) - 1);
                         }
                     }
                     m_primitive_groups.get(m_primitive_groups.size()-1).m_primitives.add(primitive);
                     break;
+                case "g":
+                    MeshPrimitiveGroup new_primitive_group = new MeshPrimitiveGroup();
+                    m_primitive_groups.add(new_primitive_group);
+                    break;
                 case "mtllib":
                     m_mtl_filenames.add(Blocks[1]);
                     break;
                 case "usemtl":
-                    MeshPrimitiveGroup new_primitive_group = new MeshPrimitiveGroup(Blocks[1]);
-                    m_primitive_groups.add(new_primitive_group);
+                    m_primitive_groups.get(m_primitive_groups.size()-1).m_material_name = Blocks[1];
                     break;
             }
         }
@@ -659,17 +660,11 @@ class Mesh
     private void fillInBuffers()
     {
         int total_primitive_size = 0;
-
         for (int i = 0; i < m_primitive_groups.size(); i++)
             total_primitive_size += m_primitive_groups.get(i).m_primitives.size();
 
-        // change it !!!! >@#$@#$@#$
-        m_vertices_data = new float[total_primitive_size * 3 * 3];
-        if(!m_normals.isEmpty())    m_normals_data  = new float[total_primitive_size * 3 * 3];
-        if(!m_uvs.isEmpty())        m_uvs_data      = new float[total_primitive_size * 3 * 2];
-        m_indices_data  = new short[total_primitive_size * 3];
-
         int i=0;
+        m_vertices_data = new float[total_primitive_size * 3 * 3];
         for(int j = 0; j < m_primitive_groups.size(); j++)
         for(int k = 0; k < m_primitive_groups.get(j).m_primitives.size(); k++)
         {
@@ -688,11 +683,13 @@ class Mesh
 
         i=0;
         if(!m_normals.isEmpty())
-            for(int j = 0; j < m_primitive_groups.size(); j++)
-                for(int k = 0; k < m_primitive_groups.get(j).m_primitives.size(); k++)
+        {
+            m_normals_data = new float[total_primitive_size * 3 * 3];
+            for (int j = 0; j < m_primitive_groups.size(); j++)
+                for (int k = 0; k < m_primitive_groups.get(j).m_primitives.size(); k++)
                 {
                     Primitive face = m_primitive_groups.get(j).m_primitives.get(k);
-                    m_normals_data[i * 9]     = m_normals.get(face.normals.get(0))[0];
+                    m_normals_data[i * 9    ] = m_normals.get(face.normals.get(0))[0];
                     m_normals_data[i * 9 + 1] = m_normals.get(face.normals.get(0))[1];
                     m_normals_data[i * 9 + 2] = m_normals.get(face.normals.get(0))[2];
                     m_normals_data[i * 9 + 3] = m_normals.get(face.normals.get(1))[0];
@@ -703,23 +700,40 @@ class Mesh
                     m_normals_data[i * 9 + 8] = m_normals.get(face.normals.get(2))[2];
                     i++;
                 }
+        }
 
         i=0;
         if(!m_uvs.isEmpty())
-            for(int j = 0; j < m_primitive_groups.size(); j++)
-                for(int k = 0; k < m_primitive_groups.get(j).m_primitives.size(); k++)
-                {
+        {
+            m_uvs_data      = new float[total_primitive_size * 3 * 2];
+            for (int j = 0; j < m_primitive_groups.size(); j++)
+                for (int k = 0; k < m_primitive_groups.get(j).m_primitives.size(); k++) {
                     Primitive face = m_primitive_groups.get(j).m_primitives.get(k);
-                    m_uvs_data[i * 6]     = m_uvs.get(face.uvs.get(0))[0];
-                    m_uvs_data[i * 6 + 1] = m_uvs.get(face.uvs.get(0))[1];
-                    m_uvs_data[i * 6 + 2] = m_uvs.get(face.uvs.get(1))[0];
-                    m_uvs_data[i * 6 + 3] = m_uvs.get(face.uvs.get(1))[1];
-                    m_uvs_data[i * 6 + 4] = m_uvs.get(face.uvs.get(2))[0];
-                    m_uvs_data[i * 6 + 5] = m_uvs.get(face.uvs.get(2))[1];
+
+                    if(face.uvs.isEmpty())
+                    {
+                        m_uvs_data[i * 6]     = 0;
+                        m_uvs_data[i * 6 + 1] = 0;
+                        m_uvs_data[i * 6 + 2] = 0;
+                        m_uvs_data[i * 6 + 3] = 0;
+                        m_uvs_data[i * 6 + 4] = 0;
+                        m_uvs_data[i * 6 + 5] = 0;
+                    }
+                    else
+                    {
+                        m_uvs_data[i * 6]     = m_uvs.get(face.uvs.get(0))[0];
+                        m_uvs_data[i * 6 + 1] = m_uvs.get(face.uvs.get(0))[1];
+                        m_uvs_data[i * 6 + 2] = m_uvs.get(face.uvs.get(1))[0];
+                        m_uvs_data[i * 6 + 3] = m_uvs.get(face.uvs.get(1))[1];
+                        m_uvs_data[i * 6 + 4] = m_uvs.get(face.uvs.get(2))[0];
+                        m_uvs_data[i * 6 + 5] = m_uvs.get(face.uvs.get(2))[1];
+                    }
                     i++;
                 }
+        }
 
         i=0;
+        m_indices_data  = new short[total_primitive_size * 3];
         for(int j = 0; j < m_primitive_groups.size(); j++)
             for(int k = 0; k < m_primitive_groups.get(j).m_primitives.size(); k++)
             {
