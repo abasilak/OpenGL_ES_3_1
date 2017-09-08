@@ -41,7 +41,7 @@ class RenderingSettings {
         while ((error = glGetError()) != GL_NO_ERROR)
         {
             Log.e(Resources.getSystem().getString(R.string.APP_TITLE), glOperation + ": glError " + error);
-          //  throw new RuntimeException(glOperation + ": glError " + error);
+            throw new RuntimeException(glOperation + ": glError " + error);
         }
     }
 

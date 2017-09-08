@@ -2,16 +2,13 @@
 
 precision mediump float;
 
-in VS_OUT
-{
-	highp vec2 texcoord_v;
-} fs_in;
-
+uniform ivec2       uniform_viewport_resolution;
 uniform sampler2D	uniform_texture_color;
 
 layout(location = 0) out vec4 out_color;
 
 void main()
 {
-    out_color  = texture(uniform_texture_color, fs_in.texcoord_v);
+    vec2 coords = gl_FragCoord.xy/vec2(uniform_viewport_resolution);
+    out_color  = texture(uniform_texture_color, coords);
 }

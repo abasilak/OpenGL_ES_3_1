@@ -22,6 +22,7 @@ import static android.opengl.GLES20.glGenBuffers;
 import static android.opengl.GLES20.glGetUniformLocation;
 import static android.opengl.GLES20.glUniform1f;
 import static android.opengl.GLES20.glUniform1i;
+import static android.opengl.GLES20.glUniform2i;
 import static android.opengl.GLES20.glUseProgram;
 import static android.opengl.GLES20.glVertexAttribPointer;
 import static android.opengl.GLES30.glBindVertexArray;
@@ -29,7 +30,7 @@ import static android.opengl.GLES30.glGenVertexArrays;
 
 class ScreenQuad {
 
-    private int []        m_vao             = new int[1];
+    private int []        m_vao                                 = new int[1];
     private Viewport      m_viewport;
     private int		      m_window_percentage;
 
@@ -38,6 +39,7 @@ class ScreenQuad {
     private ArrayList<Shader>              m_shaders            = new ArrayList<>();
     private ArrayList<ArrayList<Float>>    m_float_ids          = new ArrayList<>();
     private ArrayList<ArrayList<String>>   m_float_strings      = new ArrayList<>();
+    private ArrayList<ArrayList<Integer>>  m_images_ids         = new ArrayList<>();
     private ArrayList<ArrayList<Integer>>  m_textures_ids       = new ArrayList<>();
     private ArrayList<ArrayList<String>>   m_textures_strings   = new ArrayList<>();
 
@@ -52,16 +54,16 @@ class ScreenQuad {
     private void initVAO()
     {
 	    final float m_vertices_data[] = // Vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
-            {
-                    // Positions   // TexCoords
-                    -1.0f, 1.0f, 0.0f, 1.0f,
-                    -1.0f, -1.0f, 0.0f, 0.0f,
-                    1.0f, -1.0f, 1.0f, 0.0f,
+        {
+            // Positions
+            -1.0f, 1.0f,
+            -1.0f, -1.0f,
+            1.0f, -1.0f,
 
-                    -1.0f, 1.0f, 0.0f, 1.0f,
-                    1.0f, -1.0f, 1.0f, 0.0f,
-                    1.0f, 1.0f, 1.0f, 1.0f
-            };
+            -1.0f, 1.0f,
+            1.0f, -1.0f,
+            1.0f, 1.0f
+        };
 
         FloatBuffer m_vertices_buffer;
         m_vertices_buffer = ByteBuffer.allocateDirect ( m_vertices_data.length * Float.BYTES ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
@@ -83,7 +85,7 @@ class ScreenQuad {
         {
             glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
             glEnableVertexAttribArray(0);
-            glVertexAttribPointer(0, 4, GL_FLOAT, false, 4 * Float.BYTES, 0);
+            glVertexAttribPointer(0, 2, GL_FLOAT, false, 2 * Float.BYTES, 0);
         }
         glBindVertexArray(0);
     }
@@ -102,21 +104,34 @@ class ScreenQuad {
             for (int i = 0; i < m_float_ids.get(m_id).size(); i++)
                 glUniform1f(glGetUniformLocation(m_shaders.get(m_id).getProgram(), m_float_strings.get(m_id).get(i)), m_float_ids.get(m_id).get(i));
 
+            glUniform2i(glGetUniformLocation(m_shaders.get(m_id).getProgram(), "uniform_viewport_resolution"), m_viewport.m_width, m_viewport.m_height);
+            glUniform1i(glGetUniformLocation(m_shaders.get(m_id).getProgram(), "uniform_window_percentage"), m_window_percentage);
+            glUniform2i(glGetUniformLocation(m_shaders.get(m_id).getProgram(), "uniform_viewport_left_corner"), m_viewport.m_left_corner_x, m_viewport.m_left_corner_y);
+
+            if(!m_textures_ids.isEmpty())
+            for (int i = 0; i < m_textures_ids.get(m_id).size(); i++)
+            {
+                glActiveTexture(GL_TEXTURE0 + i);
+                glBindTexture(GL_TEXTURE_2D, m_textures_ids.get(m_id).get(i));
+            }
+
             glBindVertexArray(m_vao[0]);
             {
-                for (int i = 0; i < m_textures_ids.get(m_id).size(); i++)
-                {
-                    glActiveTexture(GL_TEXTURE0 + i);
-                    glBindTexture(GL_TEXTURE_2D, m_textures_ids.get(m_id).get(i));
-                }
                 glDrawArrays(GL_TRIANGLES, 0, 6);
             }
             glBindVertexArray(0);
+
+            if(!m_textures_ids.isEmpty())
+            for (int i = 0; i < m_textures_ids.get(m_id).size(); i++)
+            {
+                glActiveTexture(GL_TEXTURE0 + i);
+                glBindTexture(GL_TEXTURE_2D, 0);
+            }
         }
         glUseProgram(0);
     }
 
-    void    setViewport(int width, int height)
+    void    setViewport (int width, int height)
     {
         int left_corner_x  = width - width / m_window_percentage;
         int left_corner_y  = height - height / m_window_percentage;
@@ -126,12 +141,18 @@ class ScreenQuad {
         m_viewport = new Viewport(left_corner_x, left_corner_y, right_corner_x, right_corner_y);
     }
 
-    void	addShader			(Shader		shader) { m_shaders.add(shader); }
+    void	addShader   (Shader		shader) { m_shaders.add(shader); }
 
     void	setTextureList(ArrayList<Integer> tex_ids)
     {
         m_textures_ids.clear();
         m_textures_ids.add(tex_ids);
+    }
+
+    void	setImageList(ArrayList<Integer> tex_ids)
+    {
+        m_images_ids.clear();
+        m_images_ids.add(tex_ids);
     }
 
     void	addUniformTextures(ArrayList<String> tex_strings)

@@ -35,7 +35,7 @@ import static android.opengl.GLES30.glInvalidateFramebuffer;
 
 class RenderingForward extends Rendering
 {
-    private Shader  m_shader_forward_rendering;
+    private Shader  m_shader_render;
 
     private int []	m_fbo           = new int[1];
     private int []	m_texture_depth = new int[1];
@@ -44,7 +44,7 @@ class RenderingForward extends Rendering
     {
         super("Forward Rendering");
 
-        m_shader_forward_rendering = new Shader(context, context.getString(R.string.SHADER_FORWARD_RENDERING_NAME));
+        m_shader_render = new Shader(context, context.getString(R.string.SHADER_FORWARD_RENDERING_NAME));
 
         createFBO(viewport);
     }
@@ -101,7 +101,7 @@ class RenderingForward extends Rendering
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
                 {
                     for (Mesh mesh: meshes)
-                        mesh.draw(m_shader_forward_rendering.getProgram(), camera, lights, ubo_matrices);
+                        mesh.draw(m_shader_render.getProgram(), camera, lights, ubo_matrices);
                 }
 
                 for (Light light: lights)

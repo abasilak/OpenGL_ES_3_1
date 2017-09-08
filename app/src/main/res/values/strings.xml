@@ -1,11 +1,20 @@
 <resources>
     <string name="APP_TITLE">[OpenGL ES][Example]</string>
     <string name="MESH_NAME" translatable="false">test_cubes.obj</string>
+
     <string name="SHADER_SIMPLE_RENDERING_NAME" translatable="false">simple_rendering</string>
+
     <string name="SHADER_FORWARD_RENDERING_NAME" translatable="false">forward_rendering</string>
+
     <string name="SHADER_F2B_PEELING_NAME" translatable="false">f2b_peeling</string>
+
+    <string name="SHADER_AB_ARRAY_INIT_NAME" translatable="false">ab_array_init</string>
+    <string name="SHADER_AB_ARRAY_PEEL_NAME" translatable="false">ab_array_peel</string>
+    <string name="SHADER_AB_ARRAY_RESOLVE_NAME" translatable="false">ab_array_resolve</string>
+
     <string name="SHADER_SHADOW_MAPPING_NAME" translatable="false">shadow_mapping</string>
     <string name="SHADER_TEXT_RENDERING_NAME" translatable="false">text_rendering</string>
+
     <string name="SHADER_TEXTURE_COLOR_RENDERING_NAME" translatable="false">texture_color_rendering</string>
     <string name="SHADER_TEXTURE_DEPTH_RENDERING_NAME" translatable="false">texture_depth_rendering</string>
 </resources>

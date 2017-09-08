@@ -2,5 +2,5 @@
 <resources>
     <integer name="SCREEN_WIDTH">1080</integer>
     <integer name="SCREEN_HEIGHT">1920</integer>
-    <integer name="SHADOW_MAP_SIZE">1024</integer>
+    <integer name="SHADOW_MAP_SIZE">1080</integer>
 </resources>

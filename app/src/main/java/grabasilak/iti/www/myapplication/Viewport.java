@@ -10,8 +10,8 @@ public class Viewport {
 
     int	    m_width;
     int	    m_height;
-    private int	    m_left_corner_x;
-    private int	    m_left_corner_y;
+    int	    m_left_corner_x;
+    int	    m_left_corner_y;
     float	m_aspect_ratio;
 
     public Viewport(int x, int y, int w, int h)
@@ -22,7 +22,7 @@ public class Viewport {
         m_height        = h;
     }
 
-    public float getAspectRatio  (){
+    public float getAspectRatio (){
         return m_aspect_ratio ;
     }
 
