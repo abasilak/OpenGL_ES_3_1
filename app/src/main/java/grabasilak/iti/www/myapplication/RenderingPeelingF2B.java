@@ -115,7 +115,7 @@ class RenderingPeelingF2B extends Rendering
                     for (Mesh mesh: meshes)
                         mesh.peel(m_shader_peel.getProgram(), camera, lights, ubo_matrices, m_texture_depth[m_prevID], rendering_settings);
                 }
-                //glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
                 m_passes++;
             }

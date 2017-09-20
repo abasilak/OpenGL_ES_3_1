@@ -1,9 +1,9 @@
 package grabasilak.iti.www.myapplication;
 
 import android.content.res.Resources;
-import android.opengl.GLES20;
 import android.util.Log;
 
+import static android.opengl.GLES20.GL_FRAMEBUFFER;
 import static android.opengl.GLES20.GL_FRAMEBUFFER_COMPLETE;
 import static android.opengl.GLES20.GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
 import static android.opengl.GLES20.GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS;
@@ -15,10 +15,12 @@ import static android.opengl.GLES31.glGetError;
 
 class RenderingSettings {
 
-    FPS              m_fps;
-    Viewport         m_viewport;
-    final float      m_depth;
-    final float []   m_background_color;
+    FPS             m_fps;
+    Viewport        m_viewport;
+    final float     m_depth;
+    final float []  m_background_color;
+    final int       m_max_layers;
+    final int       m_max_memory;
 
     // private constructor
     RenderingSettings (int width, int height)
@@ -33,6 +35,9 @@ class RenderingSettings {
         m_background_color[1]   = 1.0f;
         m_background_color[2]   = 1.0f;
         m_background_color[3]   = 1.0f;
+
+        m_max_layers            = 10;
+        m_max_memory            = 50;
     }
 
     static void checkGlError(String glOperation) {
@@ -46,7 +51,7 @@ class RenderingSettings {
     }
 
     static void checkFramebufferStatus() {
-        int status = glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER);
+        int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
         if (status != GL_FRAMEBUFFER_COMPLETE) {
             String msg = "";
             switch (status) {

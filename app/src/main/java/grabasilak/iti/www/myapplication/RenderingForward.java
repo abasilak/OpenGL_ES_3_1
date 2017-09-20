@@ -108,7 +108,7 @@ class RenderingForward extends Rendering
                     light.render(camera);
             }
             glInvalidateFramebuffer(GL_FRAMEBUFFER, 1, new int[]{GL_DEPTH_ATTACHMENT}, 0);
-           // glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }
         rendering_settings.m_fps.end();
 

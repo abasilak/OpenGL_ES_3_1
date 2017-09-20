@@ -195,8 +195,7 @@ class RenderingAB_Array extends Rendering
                     m_screen_quad_resolve.draw();
                 }
             }
-            //glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }
         rendering_settings.m_fps.end();
 
