@@ -66,17 +66,15 @@ void main()
     vec2 coords = gl_FragCoord.xy/vec2(uniform_resolution);
     float depth = texture(uniform_textures.depth, coords).r;
 	if(gl_FragCoord.z <= depth)
-	{
 		discard;
-    }
 
 	// [TEXTURES]
 	vec4 diffuse_tex = vec4(1.0f);
 	if (uniform_material_has_tex.x > 0)
 	{
 		diffuse_tex  = texture(uniform_textures.diffuse, fs_in.texcoord_v.xy);
-		//if (diffuse_tex.a < 1.0f || uniform_material_diffuse_color.a < 1.0f)
-		//	discard;
+		if (diffuse_tex.a < 1.0f || uniform_material_diffuse_color.a < 1.0f)
+			discard;
 	}
 
 	vec4 specular_tex = vec4(1.0f);
@@ -133,5 +131,5 @@ void main()
 
 	vec3	lighting_color_final = vec3(ambient_color_final + diffuse_color_final)*attenuation_factor + emission_color_final;
 
-	out_frag_color               = vec4(lighting_color_final, 1.0f);
+	out_frag_color               = vec4(lighting_color_final, uniform_material_diffuse_color.a);
 }

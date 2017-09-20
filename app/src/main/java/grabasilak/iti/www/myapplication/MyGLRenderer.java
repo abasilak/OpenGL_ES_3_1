@@ -13,7 +13,6 @@ import javax.microedition.khronos.opengles.GL10;
 import static android.opengl.GLES20.GL_BACK;
 import static android.opengl.GLES20.GL_CCW;
 import static android.opengl.GLES20.GL_COLOR_BUFFER_BIT;
-import static android.opengl.GLES20.GL_CULL_FACE;
 import static android.opengl.GLES20.GL_DEPTH_BUFFER_BIT;
 import static android.opengl.GLES20.glClear;
 import static android.opengl.GLES20.glCullFace;
@@ -80,12 +79,12 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         addMesh(m_context.getString(R.string.MESH_NAME), true);
 
         m_rendering_forward   = new RenderingForward(m_context, m_rendering_settings.m_viewport);
-//        m_peeling_f2b         = new RenderingPeelingF2B(m_context, m_rendering_settings.m_viewport);
-        m_multifragment_ab_array   = new RenderingAB_Array(m_context, m_rendering_settings.m_viewport, 5);
+        m_peeling_f2b         = new RenderingPeelingF2B(m_context, m_rendering_settings.m_viewport);
+        //m_multifragment_ab_array   = new RenderingAB_Array(m_context, m_rendering_settings.m_viewport, 10);
 
         m_rendering_methods.add(m_rendering_forward);
-        //m_rendering_methods.add(m_peeling_f2b);
-        m_rendering_methods.add(m_multifragment_ab_array);
+        m_rendering_methods.add(m_peeling_f2b);
+        //m_rendering_methods.add(m_multifragment_ab_array);
         m_current_rendering_method = 1;
 
         m_shader_color_render = new Shader(m_context, m_context.getString(R.string.SHADER_TEXTURE_COLOR_RENDERING_NAME));
@@ -122,7 +121,7 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         glDepthFunc(GL_LEQUAL);
 
         // Set Culling Test
-        glEnable(GL_CULL_FACE);
+        //glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
         glFrontFace(GL_CCW);
 
@@ -168,10 +167,10 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         m_screen_quad_output.setViewport(width, height);
         m_screen_quad_debug.setViewport(width, height);
 
-        m_camera.computeProjectionMatrix(m_rendering_settings.m_viewport.getAspectRatio());
+        m_camera.computeProjectionMatrix(m_aabb.m_min,  m_aabb.m_max, m_rendering_settings.m_viewport.getAspectRatio());
 //        if(m_light.m_is_spotlight)
         for (Light light: m_lights)
-            light.m_camera.computeProjectionMatrix(light.m_viewport.getAspectRatio());
+            light.m_camera.computeProjectionMatrix(m_aabb.m_min,  m_aabb.m_max, light.m_viewport.getAspectRatio());
    //     else
      //       m_light.m_camera.computeProjectionMatrix(50, 50);
 
@@ -213,20 +212,21 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
 
             for (Light light: m_lights) {
                 light.init(m_aabb, dis);
+
 //                light.m_camera.m_target[0]= light.m_camera.m_target[1] = light.m_camera.m_target[2]= 0;
-  //              light.m_camera.m_eye[0] = 60.0f;
-    //            light.m_camera.m_eye[1] = 30;
-      //          light.m_camera.m_eye[2] = 0.0f;
-
-        //        light.m_initial_position[0] = 60.0f;
-          //      light.m_initial_position[1] = 30;
-            //    light.m_initial_position[2] = 0.0f;
+//                light.m_camera.m_eye[0] = 60.0f;
+//                light.m_camera.m_eye[1] = 30.f;
+//                light.m_camera.m_eye[2] = 0.0f;
+//
+//                light.m_initial_position[0] = 60.0f;
+//                light.m_initial_position[1] = 30;
+//                light.m_initial_position[2] = 0.0f;
             }
-            //m_camera.m_eye[0] = 60.0f;
-            //m_camera.m_eye[1] = 100.0f;
-            //m_camera.m_eye[2] = 170.0f;
-
-            //m_camera.m_target[0]= m_camera.m_target[1] = m_camera.m_target[2]= 0.0f;
+//            m_camera.m_eye[0] = 60.0f;
+//            m_camera.m_eye[1] = 100.0f;
+//            m_camera.m_eye[2] = 170.0f;
+//
+//            m_camera.m_target[0]= m_camera.m_target[1] = m_camera.m_target[2]= 0.0f;
         }
     }
 

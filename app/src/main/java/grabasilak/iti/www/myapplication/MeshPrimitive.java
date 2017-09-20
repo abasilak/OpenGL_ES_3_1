@@ -2,13 +2,13 @@ package grabasilak.iti.www.myapplication;
 
 import java.util.ArrayList;
 
-class Primitive {
+class MeshPrimitive {
 
     ArrayList<Integer> vertices;
     ArrayList<Integer> normals;
     ArrayList<Integer> uvs;
 
-    Primitive()
+    MeshPrimitive()
     {
         vertices = new ArrayList<>();
         normals  = new ArrayList<>();

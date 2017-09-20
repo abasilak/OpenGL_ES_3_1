@@ -1,7 +1,6 @@
 package grabasilak.iti.www.myapplication;
 
 import android.content.Context;
-import android.opengl.GLES31;
 import android.opengl.Matrix;
 
 import java.nio.ByteBuffer;
@@ -17,9 +16,13 @@ import static android.opengl.GLES20.GL_ELEMENT_ARRAY_BUFFER;
 import static android.opengl.GLES20.GL_ONE;
 import static android.opengl.GLES20.GL_ONE_MINUS_SRC_ALPHA;
 import static android.opengl.GLES20.GL_STATIC_DRAW;
+import static android.opengl.GLES20.GL_TEXTURE0;
+import static android.opengl.GLES20.GL_TEXTURE_2D;
 import static android.opengl.GLES20.GL_TRIANGLES;
 import static android.opengl.GLES20.GL_UNSIGNED_SHORT;
+import static android.opengl.GLES20.glActiveTexture;
 import static android.opengl.GLES20.glBindBuffer;
+import static android.opengl.GLES20.glBindTexture;
 import static android.opengl.GLES20.glBlendFunc;
 import static android.opengl.GLES20.glBufferData;
 import static android.opengl.GLES20.glDisable;
@@ -36,7 +39,7 @@ import static android.opengl.GLES31.glUniformMatrix4fv;
 import static android.opengl.GLES31.glUseProgram;
 import static android.opengl.GLES31.glVertexAttribPointer;
 
-public class TextManager {
+class TextManager {
 
 			int		m_x;
 			int		m_y;
@@ -70,7 +73,7 @@ public class TextManager {
     private final int []        m_uvs_vbo         = new int[1];
     private final int []        m_indices_vbo     = new int[1];
 
-	public Texture m_texture;
+	Texture m_texture;
 
 	private float 	uniformscale;
 
@@ -85,7 +88,7 @@ public class TextManager {
 
     Vector<TextObject> txtcollection;
 
-	public TextManager(Context context)
+	TextManager(Context context)
 	{
 		// Create our container
 		txtcollection 	= new Vector<>();
@@ -105,19 +108,19 @@ public class TextManager {
         m_shader_render = new Shader(context, context.getString(R.string.SHADER_TEXT_RENDERING_NAME));
 	}
 
-    public void clear()
+    void clear()
     {
         if(m_enabled)
             txtcollection.clear();
     }
 
-	public void addText(TextObject obj)
+	void addText(TextObject obj)
 	{
         if(m_enabled)
 		    txtcollection.add(obj);
 	}
 
-	public void AddCharRenderInformation(float[] vec, float[] cs, float[] uv, short[] indi)
+	private void AddCharRenderInformation(float[] vec, float[] cs, float[] uv, short[] indi)
 	{
 		// We need a base value because the object has indices related to
 		// that object and not to this collection so basicly we need to
@@ -154,7 +157,7 @@ public class TextManager {
 		}
 	}
 
-	public void PrepareDrawInfo()
+	private void PrepareDrawInfo()
 	{
 		// Reset the indices.
 		index_vecs = 0;
@@ -186,7 +189,7 @@ public class TextManager {
 		indices = new short[charcount * 6];
 	}
 
-	public void PrepareDraw()
+	private void PrepareDraw()
 	{
 		// Setup all the arrays
 		PrepareDrawInfo();
@@ -209,7 +212,7 @@ public class TextManager {
         createVAO();
 	}
 
-    public void createBuffers()
+    private void createBuffers()
     {
         // The vertex buffer.
         ByteBuffer bb = ByteBuffer.allocateDirect(vecs.length * 4);
@@ -335,8 +338,8 @@ public class TextManager {
                 // Set the sampler texture unit to our selected id
                 glUniform1i(glGetUniformLocation(m_shader_render.getProgram(), "font_texture"), 0);
 
-                GLES31.glActiveTexture(GLES31.GL_TEXTURE0);
-                GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, m_texture.m_id);
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, m_texture.m_id);
 
                 // 3. DRAW
                 glBindVertexArray(m_vao[0]);
@@ -344,8 +347,6 @@ public class TextManager {
                     glDrawRangeElements(GL_TRIANGLES, 0, indices.length, indices.length, GL_UNSIGNED_SHORT, 0);
                 }
                 glBindVertexArray(0);
-
-                GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, 0);
             }
             glUseProgram(0);
         }
@@ -421,7 +422,7 @@ public class TextManager {
 			// Creating the triangle information
 			float[] vec = new float[12];
 			float[] uv = new float[8];
-			float[] colors = new float[16];
+			float[] colors;
 
 			vec[0] = x;
 			vec[1] = y + (RI_TEXT_WIDTH * uniformscale);
@@ -463,7 +464,7 @@ public class TextManager {
 		}
 	}
 
-	public void setUniformscale(float uniformscale) {
+	void setUniformscale(float uniformscale) {
 		this.uniformscale = uniformscale;
 	}
 }

@@ -56,10 +56,10 @@ class RenderingAB_Array extends Rendering
     private ScreenQuad m_screen_quad_resolve;
 
     private int [] m_fbo                = new int[1];
-            int [] m_texture_peel_depth = new int[1];
-            int [] m_texture_peel_color = new int[1];
-            int [] m_texture_depth      = new int[1];
-            int [] m_texture_counter    = new int[1];
+    private int [] m_texture_peel_depth = new int[1];
+    private int [] m_texture_peel_color = new int[1];
+    private int [] m_texture_depth      = new int[1];
+    private int [] m_texture_counter    = new int[1];
 
     RenderingAB_Array(Context context, Viewport viewport, int max_layers)
     {
@@ -98,7 +98,7 @@ class RenderingAB_Array extends Rendering
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         }
-        glBindTexture(GL_TEXTURE_2D, 0);
+        //glBindTexture(GL_TEXTURE_2D, 0);
 
         // Texture Depth
         glGenTextures(1, m_texture_depth, 0);
@@ -110,7 +110,7 @@ class RenderingAB_Array extends Rendering
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         }
-        glBindTexture(GL_TEXTURE_2D, 0);
+        //glBindTexture(GL_TEXTURE_2D, 0);
 
         // Texture Counter
         glGenTextures(1, m_texture_counter, 0);
@@ -122,7 +122,7 @@ class RenderingAB_Array extends Rendering
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         }
-        glBindTexture(GL_TEXTURE_2D, 0);
+        //glBindTexture(GL_TEXTURE_2D, 0);
 
         // Texture Peel
         glGenTextures(1, m_texture_peel_depth, 0);
@@ -134,7 +134,7 @@ class RenderingAB_Array extends Rendering
             glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         }
-        glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+        //glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 
         glGenTextures(1, m_texture_peel_color, 0);
         glBindTexture(GL_TEXTURE_2D_ARRAY, m_texture_peel_color[0]);
@@ -145,7 +145,7 @@ class RenderingAB_Array extends Rendering
             glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         }
-        glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+        //glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 
         // Framebuffer Object
         glGenFramebuffers(1, m_fbo, 0);
@@ -154,7 +154,7 @@ class RenderingAB_Array extends Rendering
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT , GL_TEXTURE_2D, m_texture_depth[0], 0);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_texture_color[0], 0);
         }
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        //glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         RenderingSettings.checkFramebufferStatus();
         RenderingSettings.checkGlError(m_name + " - [createFBO]");
@@ -195,7 +195,7 @@ class RenderingAB_Array extends Rendering
                     m_screen_quad_resolve.draw();
                 }
             }
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            //glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         }
         rendering_settings.m_fps.end();

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <integer name="SCREEN_WIDTH">1080</integer>
-    <integer name="SCREEN_HEIGHT">1920</integer>
-    <integer name="SHADOW_MAP_SIZE">1080</integer>
+    <integer name="SCREEN_WIDTH">768</integer>
+    <integer name="SCREEN_HEIGHT">1024</integer>
+    <integer name="SHADOW_MAP_SIZE">1024</integer>
 </resources>

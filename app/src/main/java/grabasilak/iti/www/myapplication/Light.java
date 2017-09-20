@@ -25,7 +25,7 @@ class Light
 
     private boolean	    m_is_rendered;
     private boolean	    m_is_animated;
-            boolean	    m_is_spotlight;
+    private boolean	    m_is_spotlight;
     private boolean	    m_casts_shadows;
     private float	    m_spotlight_cutoff;
 
@@ -33,7 +33,7 @@ class Light
     private float	    m_att_linear;
     private float	    m_att_quadratic;
     private float []    m_color                     = new float[3];
-            float []    m_initial_position          = new float[3];
+    private float []    m_initial_position          = new float[3];
 
     private Shader      m_shader_simple_rendering;
 
@@ -43,7 +43,7 @@ class Light
     Camera              m_camera;
     Viewport            m_viewport;
     private Mesh        m_sphere;
-    float               m_radius;
+    private float       m_radius;
 
     Light(Context context)
     {
@@ -59,7 +59,7 @@ class Light
         m_casts_shadows         = true;
 
         m_camera                = new Camera();
-        m_camera.m_fov          = 60.0f;
+        m_camera.m_fov          = 90.0f;
 
         m_color[0]              = m_color[1]            = m_color[2]            = 1.0f;
         m_initial_position[0]   = m_initial_position[1] = m_initial_position[2] = 0.0f;
@@ -81,9 +81,9 @@ class Light
     {
         m_radius = aabb.m_radius/50f;
 
-        m_camera.m_eye[0]     = aabb.m_center[0] + dis/4;
-        m_camera.m_eye[1]     = aabb.m_center[1] + dis/4;
-        m_camera.m_eye[2]     = aabb.m_center[2] + dis/4;
+        m_camera.m_eye[0]     = aabb.m_center[0] + dis/2;
+        m_camera.m_eye[1]     = aabb.m_center[1] + dis/2;
+        m_camera.m_eye[2]     = aabb.m_center[2] + dis/2;
 
         m_camera.m_target[0]  = aabb.m_center[0];
         m_camera.m_target[1]  = aabb.m_center[1];
@@ -102,7 +102,7 @@ class Light
     {
         m_is_animated = true;
 
-        m_camera.m_world_rot_angle += 0.3f;
+        m_camera.m_world_rot_angle += 0.2f;
         if (m_camera.m_world_rot_angle > 360.0f)
             m_camera.m_world_rot_angle -= 360.0f;
         m_camera.computeWorldMatrix();
@@ -123,7 +123,7 @@ class Light
         updateUBO();
     }
 
-    void createUBO()
+    private void createUBO()
     {
         float [] light_data = new float[24];
 

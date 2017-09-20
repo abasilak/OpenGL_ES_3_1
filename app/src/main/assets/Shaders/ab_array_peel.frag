@@ -51,9 +51,9 @@ layout (std140) uniform Light
 	vec4		uniform_light_attenuation_cutoff;
 };
 
-layout(binding = 0, r32ui) uniform mediump coherent  uimage2D     uniform_image_counter;
-layout(binding = 1, r32f ) uniform mediump writeonly image2DArray uniform_image_peel_depth;
-layout(binding = 2, rgba8) uniform mediump writeonly image2DArray uniform_image_peel_color;
+layout(binding = 0, r32ui) uniform highp    coherent  uimage2D     uniform_image_counter;
+layout(binding = 1, r32f ) uniform highp    writeonly image2DArray uniform_image_peel_depth;
+layout(binding = 2, rgba8) uniform highp    writeonly image2DArray uniform_image_peel_color;
 
 // OUT
 layout(location = 0) out vec4 out_frag_color;
@@ -88,6 +88,9 @@ void main()
 	float	dist_to_light		= length	(vertex_to_light_wcs);
 			vertex_to_light_wcs	= normalize	(vertex_to_light_wcs);
 	vec3	normal_wcs			= normalize	(fs_in.normal_wcs_v);
+
+    // BACK-FACE SHADING
+	if(!gl_FrontFacing) normal_wcs = -normal_wcs;
 
 	// [SPOTLIGHT]
 	float	attenuation_factor	= (is_spot_light) ? lightGetAttenuation(dist_to_light)                      : 1.0f;
@@ -126,7 +129,7 @@ void main()
 
 	vec3	lighting_color_final = vec3(ambient_color_final + diffuse_color_final)*attenuation_factor + emission_color_final;
 
-    vec4    color_final          = vec4(lighting_color_final, 1.0f);
+    vec4    color_final          = vec4(lighting_color_final, uniform_material_diffuse_color.a);
 
     // A-Buffer Construction
     {

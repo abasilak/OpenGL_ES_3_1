@@ -3,59 +3,83 @@ package grabasilak.iti.www.myapplication;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.opengl.GLES31;
 import android.opengl.GLUtils;
 import android.util.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.IntBuffer;
 
+import static android.opengl.GLES20.GL_LINEAR;
+import static android.opengl.GLES20.GL_RGBA;
 import static android.opengl.GLES20.GL_TEXTURE_2D;
 import static android.opengl.GLES20.GL_TEXTURE_MAG_FILTER;
 import static android.opengl.GLES20.GL_TEXTURE_MIN_FILTER;
+import static android.opengl.GLES20.GL_UNSIGNED_BYTE;
 import static android.opengl.GLES20.glBindTexture;
 import static android.opengl.GLES20.glGenTextures;
+import static android.opengl.GLES20.glTexImage2D;
 import static android.opengl.GLES20.glTexParameteri;
 
-public class Texture
+class Texture
 {
-    int     m_id;
-    boolean m_loaded;
-    String  m_filename;
+            int     m_id;
+            boolean m_loaded;
+    private String  m_filename;
 
-    public Texture()
+    Texture()
     {
         m_id = 0;
         m_loaded = false;
     }
 
-    public void load(Context context, String name)
+    void load(Context context, String name)
     {
         m_filename = name;
 
         InputStream istr;
-        Bitmap bmp = null;
+        Bitmap      bmp;
+        IntBuffer   texBuffer;
+
+        int[] tex_id = new int[1];
+        glGenTextures(1, tex_id, 0);
+
         try
         {
             istr = context.getAssets().open(m_filename);
-            bmp = BitmapFactory.decodeStream(istr);
+
+            String [] Blocks = m_filename.split("\\."); //split by '.'
+
+            glBindTexture(GL_TEXTURE_2D, tex_id[0]);
+
+            if(Blocks[1].equals("tga"))
+            {
+                byte [] buffer = new byte[istr.available()];
+                istr.read(buffer);
+                istr.close();
+
+                int [] pixels   = TGAReader.read(buffer, TGAReader.ABGR);
+                texBuffer       = IntBuffer.wrap(pixels);
+
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TGAReader.getWidth(buffer), TGAReader.getHeight(buffer), 0, GL_RGBA, GL_UNSIGNED_BYTE, texBuffer);
+            }
+            else
+            {
+                bmp = BitmapFactory.decodeStream(istr);
+                GLUtils.texImage2D(GL_TEXTURE_2D, 0, bmp, 0);
+                assert bmp != null;
+                bmp.recycle();
+            }
+
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            //glBindTexture(GL_TEXTURE_2D, 0);
+
         }
         catch (IOException e)
         {
             Log.d("LOADING FILE", "FILE LOADED UNSUCCESSFULLY !");
         }
-
-        int[] tex_id = new int[1];
-        glGenTextures(1, tex_id, 0);
-        glBindTexture(GL_TEXTURE_2D, tex_id[0]);
-        {
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GLES31.GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GLES31.GL_LINEAR);
-            GLUtils.texImage2D(GL_TEXTURE_2D, 0, bmp, 0);
-            glBindTexture(GL_TEXTURE_2D, 0);
-        }
-        assert bmp != null;
-        bmp.recycle();
 
         m_id = tex_id[0];
         m_loaded = true;

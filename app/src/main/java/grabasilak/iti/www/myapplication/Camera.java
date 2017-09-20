@@ -51,8 +51,28 @@ class Camera {
         Matrix.setLookAtM(m_view_matrix, 0, m_eye[0], m_eye[1], m_eye[2], m_target[0], m_target[1], m_target[2],  m_up[0],  m_up[1],  m_up[2]);
     }
 
-    void computeProjectionMatrix(float aspect_ratio)
+    void computeProjectionMatrix(float [] b1, float [] b2, float aspect_ratio)
     {
+        float[] b1_eye = new float[3];
+        b1_eye[0] = b1[0] - m_eye[0];
+        b1_eye[1] = b1[1] - m_eye[1];
+        b1_eye[2] = b1[2] - m_eye[2];
+
+        float[] b2_eye = new float[3];
+        b2_eye[0] = b2[0] - m_eye[0];
+        b2_eye[1] = b2[1] - m_eye[1];
+        b2_eye[2] = b2[2] - m_eye[2];
+
+        float[] dir_eye = new float[3];
+        dir_eye[0] = m_target[0] - m_eye[0];
+        dir_eye[1] = m_target[1] - m_eye[1];
+        dir_eye[2] = m_target[2] - m_eye[2];
+
+        dir_eye    = Util.normalize(dir_eye);
+
+        m_near_field = 0.4f * Math.min(Util.dot(b1_eye, dir_eye), Util.dot(b2_eye, dir_eye));
+        m_far_field  = 1.7f * Math.max(Util.dot(b1_eye, dir_eye), Util.dot(b2_eye, dir_eye));
+
         Matrix.perspectiveM(m_projection_matrix, 0, m_fov, aspect_ratio, m_near_field, m_far_field);
     }
     void computeProjectionMatrix(int width, int height, int depth)

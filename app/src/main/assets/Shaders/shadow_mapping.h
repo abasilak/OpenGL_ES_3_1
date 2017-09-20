@@ -1,13 +1,13 @@
 #define SHADOW_MAPPING
-#define SHADOW_NUM_SAMPLES_EARLY	2
-#define SHADOW_NUM_SAMPLES			8
-#define SHADOW_DEPTH_BIAS			0.002f
+#define SHADOW_NUM_SAMPLES_EARLY	4
+#define SHADOW_NUM_SAMPLES			16
+#define SHADOW_DEPTH_BIAS			0.00075f
 #define SHADOW_CONSTANT_BIAS
 
 #define SHADOW_PCF
 #define SHADOW_POISSON_SAMPLING
 #define SHADOW_STRATIFIED_SAMPLING
-//#define SHADOW_EARLY_BAILING
+#define SHADOW_EARLY_BAILING
 
 #ifdef SHADOW_POISSON_SAMPLING
 vec2 poissonDisk[16] = vec2[]
@@ -68,6 +68,7 @@ float is_point_in_shadow(vec4 position, float bias)
 	return (position.z > texture(uniform_textures.shadow_map, position.xy).r + bias) ? 0.0f : 1.0f;
 }
 
+#ifdef SHADOW_PCF
 float is_point_in_shadow_pcf(vec4 position, float bias)
 {
 	int   total_samples = 0;
@@ -100,6 +101,7 @@ float is_point_in_shadow_pcf(vec4 position, float bias)
 
 	return isInShadow;
 }
+#endif
 
 float lightGetShadow(const float diffuse_angle_factor)
 {

@@ -15,4 +15,12 @@ class Util {
         for (int i = 0; i < vec.length; ++i) a[i] = vec[i]/divisor;
         return a;
     }
+
+    static float dot(final float[] a, final float[] b)
+    {
+        float sum = 0.f;
+        for (int i = 0; i < a.length; i++)
+            sum += a[i] * b[i];
+        return sum;
+    }
 }

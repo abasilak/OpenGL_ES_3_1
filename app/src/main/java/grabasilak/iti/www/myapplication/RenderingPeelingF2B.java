@@ -40,7 +40,7 @@ class RenderingPeelingF2B extends Rendering
     private int     m_passes;
 
     private int []	m_fbo           = new int[2];
-            int []	m_texture_depth = new int[2];
+    private int []	m_texture_depth = new int[2];
 
     RenderingPeelingF2B(Context context, Viewport viewport)
     {
@@ -67,7 +67,7 @@ class RenderingPeelingF2B extends Rendering
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         }
-        glBindTexture(GL_TEXTURE_2D, 0);
+        //glBindTexture(GL_TEXTURE_2D, 0);
 
         for (int i = 0; i < 2; i++)
         {
@@ -80,7 +80,7 @@ class RenderingPeelingF2B extends Rendering
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             }
-            glBindTexture(GL_TEXTURE_2D, 0);
+            //glBindTexture(GL_TEXTURE_2D, 0);
 
             // Framebuffer Object
             glBindFramebuffer(GL_FRAMEBUFFER, m_fbo[i]);
@@ -88,7 +88,7 @@ class RenderingPeelingF2B extends Rendering
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_texture_depth[i], 0);
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_texture_color[0], 0);
             }
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            //glBindFramebuffer(GL_FRAMEBUFFER, 0);
             RenderingSettings.checkFramebufferStatus();
         }
 
@@ -115,7 +115,7 @@ class RenderingPeelingF2B extends Rendering
                     for (Mesh mesh: meshes)
                         mesh.peel(m_shader_peel.getProgram(), camera, lights, ubo_matrices, m_texture_depth[m_prevID], rendering_settings);
                 }
-                glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                //glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
                 m_passes++;
             }
