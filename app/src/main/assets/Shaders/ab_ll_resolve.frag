@@ -1,5 +1,7 @@
 #include "version.h"
 
+precision highp int;
+precision highp uint;
 precision highp float;
 
 #include "heatmap.h"
@@ -8,7 +10,7 @@ precision highp float;
 
 layout(binding = 0, r32ui) uniform highp   readonly uimage2D      uniform_image_counter;
 layout(binding = 1, r32ui) uniform highp   readonly uimage2D      uniform_image_head;
-layout(binding = 3, std430)        highp   readonly buffer LinkedLists { NodeTypeLL nodes[]; };
+layout(binding = 4, std430)        highp   readonly buffer LinkedLists { NodeTypeLL nodes[]; };
 
 uint  getPixelFragCounter    ()                  {return imageLoad (uniform_image_counter   , ivec2(gl_FragCoord.xy)).r;}
 uint  getPixelFragHead       ()                  {return imageLoad (uniform_image_head      , ivec2(gl_FragCoord.xy)).r;}
@@ -27,8 +29,7 @@ void main()
         uint index = getPixelFragHead();
 
 #ifdef HEATMAP_ENABLED
-        out_frag_color  = vec4(getValueBetweenTwoFixedColors(float(counterTotal)/float(LOCAL_SIZE+1), GREEN, RED), 1.0f);
-        out_frag_color  = vec4(getValueBetweenTwoFixedColors(float(index)/float(10000), GREEN, RED), 1.0f);
+        //out_frag_color  = vec4(getValueBetweenTwoFixedColors(float(counterTotal)/float(LOCAL_SIZE+1), GREEN, RED), 1.0f);
         return;
 #endif
 
@@ -42,15 +43,15 @@ void main()
         sort(counterTotal);
 
 // LAYER
-        int id = int(fragments[layer].r);
-        out_frag_color = nodes[id].color;
-        //out_frag_color = vec4(fragments[layer].g);
+      //  int id = int(fragments[layer].r);
+      //  out_frag_color = nodes[id].color;
+      //  out_frag_color = vec4(fragments[layer].g);
 
 // 3. RESOLVE
-//        vec4 finalColor = vec4(0.0f);
-//        for(int i=0; i<counterTotal; i++)
-//            finalColor += getPixelFragColorValue(int(fragments[i].r))*(1.0f-finalColor.a);
-//        out_frag_color = finalColor;
+        vec4 finalColor = vec4(0.0f);
+        for(int i=0; i<counterTotal; i++)
+            finalColor += nodes[int(fragments[i].r)].color*(1.0f-finalColor.a);
+        out_frag_color = finalColor;
     }
     else
         discard;

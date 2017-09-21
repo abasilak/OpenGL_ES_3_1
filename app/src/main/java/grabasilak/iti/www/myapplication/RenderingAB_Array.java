@@ -26,6 +26,7 @@ import static android.opengl.GLES20.GL_UNSIGNED_INT;
 import static android.opengl.GLES20.glBindFramebuffer;
 import static android.opengl.GLES20.glBindTexture;
 import static android.opengl.GLES20.glClear;
+import static android.opengl.GLES20.glColorMask;
 import static android.opengl.GLES20.glDisable;
 import static android.opengl.GLES20.glEnable;
 import static android.opengl.GLES20.glFramebufferTexture2D;
@@ -174,6 +175,7 @@ class RenderingAB_Array extends Rendering
                 glBindImageTexture(1, m_texture_peel_depth  [0], 0, true , 0, GL_READ_WRITE, GL_R32F);
                 glBindImageTexture(2, m_texture_peel_color  [0], 0, true , 0, GL_READ_WRITE, GL_RGBA8);
 
+                glColorMask(false, false, false, false);
                 glDisable(GL_DEPTH_TEST);
                 glDepthMask(false);
 
@@ -190,6 +192,7 @@ class RenderingAB_Array extends Rendering
                 }
                 glMemoryBarrierByRegion(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
+                glColorMask(true, true, true, true);
                 glEnable(GL_DEPTH_TEST);
                 glDepthMask(true);
 

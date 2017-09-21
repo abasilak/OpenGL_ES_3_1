@@ -6,8 +6,11 @@ precision highp float;
 #include "uniforms.h"
 #include "illumination.h"
 
-                    uniform ivec2     uniform_resolution;
-layout(binding = 5) uniform	sampler2D uniform_textures_depth;
+                     uniform    ivec2     uniform_resolution;
+layout (binding = 5) uniform    sampler2D uniform_textures_depth;
+
+layout (early_fragment_tests) in;
+layout(location = 1) out float out_frag_depth;
 
 void main()
 {
@@ -17,4 +20,5 @@ void main()
 		discard;
 
 	out_frag_color = compute_color();
+	out_frag_depth = gl_FragCoord.z;
 }

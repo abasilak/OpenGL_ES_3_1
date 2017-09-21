@@ -313,7 +313,7 @@ class Mesh
         glUseProgram(0);
     }
 
-    void peel(int program, Camera camera, ArrayList<Light> lights, int UBO_Matrices, int m_texture_depth, RenderingSettings rendering_settings)
+    void peel(int program, Camera camera, ArrayList<Light> lights, int UBO_Matrices, int texture_depth, RenderingSettings rendering_settings)
     {
         float[] mw_matrix       = new float[16];
         float[] lmw_matrix      = new float[16];
@@ -330,7 +330,7 @@ class Mesh
         {
             mw_matrix_buffer.put (mw_matrix);
             mw_matrix_buffer.position ( 0 );
-            glBufferSubData(GL_UNIFORM_BUFFER, 0			, m_sizeofM44, mw_matrix_buffer);
+            glBufferSubData(GL_UNIFORM_BUFFER, 0			  , m_sizeofM44, mw_matrix_buffer);
 
             v_matrix_buffer.put (camera.m_view_matrix);
             v_matrix_buffer.position ( 0 );
@@ -362,7 +362,7 @@ class Mesh
             glBindTexture(GL_TEXTURE_2D, lights.get(0).m_shadow_mapping.getTextureDepth());
 
             glActiveTexture(GL_TEXTURE5);
-            glBindTexture(GL_TEXTURE_2D, m_texture_depth);
+            glBindTexture(GL_TEXTURE_2D, texture_depth);
 
             glBindVertexArray ( m_vao[0] );
             for (int i = 0, start = 0, end = m_primitive_groups.get(i).m_primitives.size()*3; i < m_primitive_groups.size(); i++, start += end)
@@ -405,10 +405,10 @@ class Mesh
             }
             glBindVertexArray ( 0 );
 
-            for (int i = 0; i < 5; i++)
+            //for (int i = 0; i < 5; i++)
             {
-                glActiveTexture(GL_TEXTURE0 + i);
-                glBindTexture(GL_TEXTURE_2D, 0);
+                //glActiveTexture(GL_TEXTURE0 + i);
+                //glBindTexture(GL_TEXTURE_2D, 0);
             }
         }
         glUseProgram(0);

@@ -30,8 +30,8 @@ import static android.opengl.GLES20.glBindBuffer;
 import static android.opengl.GLES20.glBindFramebuffer;
 import static android.opengl.GLES20.glBindTexture;
 import static android.opengl.GLES20.glBufferData;
-import static android.opengl.GLES20.glBufferSubData;
 import static android.opengl.GLES20.glClear;
+import static android.opengl.GLES20.glColorMask;
 import static android.opengl.GLES20.glDepthMask;
 import static android.opengl.GLES20.glDisable;
 import static android.opengl.GLES20.glEnable;
@@ -41,11 +41,16 @@ import static android.opengl.GLES20.glGenFramebuffers;
 import static android.opengl.GLES20.glGenTextures;
 import static android.opengl.GLES20.glTexImage2D;
 import static android.opengl.GLES20.glTexParameteri;
+import static android.opengl.GLES30.GL_MAP_INVALIDATE_BUFFER_BIT;
+import static android.opengl.GLES30.GL_MAP_UNSYNCHRONIZED_BIT;
+import static android.opengl.GLES30.GL_MAP_WRITE_BIT;
 import static android.opengl.GLES30.GL_R32UI;
 import static android.opengl.GLES30.GL_SRGB8_ALPHA8;
 import static android.opengl.GLES30.glBindBufferBase;
 import static android.opengl.GLES30.glDrawBuffers;
+import static android.opengl.GLES30.glMapBufferRange;
 import static android.opengl.GLES30.glTexStorage2D;
+import static android.opengl.GLES30.glUnmapBuffer;
 import static android.opengl.GLES31.GL_ATOMIC_COUNTER_BARRIER_BIT;
 import static android.opengl.GLES31.GL_ATOMIC_COUNTER_BUFFER;
 import static android.opengl.GLES31.GL_READ_WRITE;
@@ -53,7 +58,7 @@ import static android.opengl.GLES31.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT;
 import static android.opengl.GLES31.GL_SHADER_STORAGE_BARRIER_BIT;
 import static android.opengl.GLES31.GL_SHADER_STORAGE_BUFFER;
 import static android.opengl.GLES31.glBindImageTexture;
-import static android.opengl.GLES31.glMemoryBarrierByRegion;
+import static android.opengl.GLES31.glMemoryBarrier;
 
 class RenderingAB_LL extends Rendering
 {
@@ -74,7 +79,7 @@ class RenderingAB_LL extends Rendering
     private int [] m_atomic_counter     = new int[1];
     private int [] m_ssbo_peel          = new int[1];
 
-    private IntBuffer m_atomic_counter_buffer;
+    private int [] m_atomic_counter_data = new int[1];
 
     RenderingAB_LL(Context context, Viewport viewport, int max_layers)
     {
@@ -99,6 +104,8 @@ class RenderingAB_LL extends Rendering
             m_screen_quad_resolve.setViewport        (viewport.m_width, viewport.m_height);
             m_screen_quad_resolve.addShader          (m_shader_resolve);
         }
+
+        m_atomic_counter_data[0] = 0;
 
         createFBO(viewport);
     }
@@ -154,17 +161,10 @@ class RenderingAB_LL extends Rendering
         //glBindTexture(GL_TEXTURE_2D, 0);
 
         // Atomic Counter
-        int[] atomic_counter_data = new int[1];
-        atomic_counter_data[0] = 0;
-
-        m_atomic_counter_buffer = ByteBuffer.allocateDirect(Integer.BYTES).order(ByteOrder.nativeOrder()).asIntBuffer();
-        m_atomic_counter_buffer.put(atomic_counter_data);
-        m_atomic_counter_buffer.position(0);
-
         glGenBuffers(1, m_atomic_counter, 0);
         glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, m_atomic_counter[0]);
         {
-            glBufferData(GL_ATOMIC_COUNTER_BUFFER, Integer.BYTES, m_atomic_counter_buffer, GL_DYNAMIC_DRAW);
+            glBufferData(GL_ATOMIC_COUNTER_BUFFER, Integer.BYTES, null, GL_DYNAMIC_DRAW);
         }
         glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
 
@@ -191,7 +191,7 @@ class RenderingAB_LL extends Rendering
     {
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_ssbo_peel[0]);
         {
-            glBufferData(GL_SHADER_STORAGE_BUFFER, m_total_fragments * (8*Float.BYTES), null, GL_DYNAMIC_DRAW);
+            glBufferData(GL_SHADER_STORAGE_BUFFER, m_total_fragments * (5*Float.BYTES + 1*Integer.BYTES), null, GL_DYNAMIC_DRAW);
         }
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
@@ -205,9 +205,10 @@ class RenderingAB_LL extends Rendering
             {
                 glBindImageTexture(0, m_texture_counter[0], 0, false, 0, GL_READ_WRITE, GL_R32UI);
                 glBindImageTexture(1, m_texture_head   [0], 0, false, 0, GL_READ_WRITE, GL_R32UI);
-                glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 2, m_atomic_counter[0]);
-                glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, m_ssbo_peel[0]);
+                glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, m_ssbo_peel[0]);
+                glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 3, m_atomic_counter[0]);
 
+                glColorMask(false, false, false, false);
                 glDisable(GL_DEPTH_TEST);
                 glDepthMask(false);
 
@@ -215,33 +216,46 @@ class RenderingAB_LL extends Rendering
                 {
                     glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, m_atomic_counter[0]);
                     {
-                        glBufferSubData(GL_ATOMIC_COUNTER_BUFFER, 0, Integer.BYTES, m_atomic_counter_buffer);
-
-//                  Buffer mappedBuffer = glMapBufferRange(GL_ATOMIC_COUNTER_BUFFER,0, Integer.BYTES, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
-//                  ((IntBuffer)mappedBuffer).put (atomic_zero);
-//                  ((IntBuffer)mappedBuffer).position(0);
+                        IntBuffer mappedBuffer = ( ( ByteBuffer ) glMapBufferRange (
+                                GL_ATOMIC_COUNTER_BUFFER, 0, Integer.BYTES,
+                                GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT)).order ( ByteOrder.nativeOrder() ).asIntBuffer();
+                        mappedBuffer.put (m_atomic_counter_data).position(0);
+                        glUnmapBuffer ( GL_ATOMIC_COUNTER_BUFFER );
                     }
                     glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
                 }
-                glMemoryBarrierByRegion(GL_ATOMIC_COUNTER_BARRIER_BIT);
+                glMemoryBarrier(GL_ATOMIC_COUNTER_BARRIER_BIT);
 
                 // 0.b INIT Counter & Head
                 {
                     m_screen_quad_init.draw();
                 }
-                glMemoryBarrierByRegion(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+                glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
                 // 1. PEEL
                 {
                     for (Mesh mesh: meshes)
                         mesh.draw(m_shader_peel.getProgram(), camera, lights, ubo_matrices);
                 }
-                glMemoryBarrierByRegion(GL_SHADER_STORAGE_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+                glMemoryBarrier(GL_ATOMIC_COUNTER_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+/*
+                glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, m_atomic_counter[0]);
+                {
+                    IntBuffer mappedBuffer = ( ( ByteBuffer ) glMapBufferRange (
+                            GL_ATOMIC_COUNTER_BUFFER, 0, Integer.BYTES,
+                            GL_MAP_READ_BIT)).order ( ByteOrder.nativeOrder() ).asIntBuffer();
 
+                    int x = mappedBuffer.get();
+                    Log.d("FRAGMENTS", "" + x );
+                    glUnmapBuffer ( GL_ATOMIC_COUNTER_BUFFER );
+                }
+                glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);*/
+
+                // 2. RESOLVE
+                glColorMask(true, true, true, true);
                 glEnable(GL_DEPTH_TEST);
                 glDepthMask(true);
 
-                // 2. RESOLVE
                 glDrawBuffers(1, new int[]{GL_COLOR_ATTACHMENT0}, 0);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
                 {
@@ -250,7 +264,7 @@ class RenderingAB_LL extends Rendering
 
                 glBindImageTexture(0, 0, 0, false, 0, GL_READ_WRITE, GL_R32UI);
                 glBindImageTexture(1, 0, 0, false, 0, GL_READ_WRITE, GL_R32UI);
-                glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 2, 0);
+                glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 4, 0);
                 glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, 0);
             }
             glBindFramebuffer(GL_FRAMEBUFFER, 0);

@@ -1,6 +1,6 @@
 struct NodeTypeLL
 {
-    vec4  color;
-    float depth;
-    uint  next;
+    highp vec4   color;
+    highp float  depth;
+    highp uint   next;
 };

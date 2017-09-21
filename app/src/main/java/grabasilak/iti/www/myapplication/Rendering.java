@@ -6,7 +6,8 @@ abstract class Rendering
 {
     String    m_name;
     int       m_total_passes;
-    int []    m_texture_color = new int[1];
+    int []    m_texture_color   = new int[1];
+//    int []    m_occlusion_query = new int[1];
 
     Rendering(String name)
     {

@@ -1,5 +1,6 @@
 #include "version.h"
 
+precision highp uint;
 precision highp float;
 
 layout(binding = 0, r32ui) uniform highp writeonly uimage2D     uniform_image_counter;
