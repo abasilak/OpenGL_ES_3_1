@@ -65,7 +65,7 @@ float random(vec3 seed, int i)
 #ifdef SHADOW_MAPPING
 float is_point_in_shadow(vec4 position, float bias)
 {
-	return (position.z > texture(uniform_textures.shadow_map, position.xy).r + bias) ? 0.0f : 1.0f;
+	return (position.z > texture(uniform_textures_shadow_map, position.xy).r + bias) ? 0.0f : 1.0f;
 }
 
 #ifdef SHADOW_PCF
@@ -73,7 +73,7 @@ float is_point_in_shadow_pcf(vec4 position, float bias)
 {
 	int   total_samples = 0;
 	float isInShadow	= 0.0f;
-	float shadow_map_step = 1.0/float(textureSize(uniform_textures.shadow_map, 0));
+	float shadow_map_step = 1.0/float(textureSize(uniform_textures_shadow_map, 0));
 
 	for (int i=0; i<SHADOW_NUM_SAMPLES; i++)
 	{
@@ -84,9 +84,9 @@ float is_point_in_shadow_pcf(vec4 position, float bias)
 #endif
 
 #ifdef SHADOW_POISSON_SAMPLING
-		float shadow_map_z = texture(uniform_textures.shadow_map, position.xy + poissonDisk[index]*shadow_map_step).r;
+		float shadow_map_z = texture(uniform_textures_shadow_map, position.xy + poissonDisk[index]*shadow_map_step).r;
 #else
-		float shadow_map_z = texture(uniform_textures.shadow_map, position.xy + kernelDisk [index]*shadow_map_step).r;
+		float shadow_map_z = texture(uniform_textures_shadow_map, position.xy + kernelDisk [index]*shadow_map_step).r;
 #endif
 		if (position.z < shadow_map_z + bias)
 			isInShadow += 1.0f;

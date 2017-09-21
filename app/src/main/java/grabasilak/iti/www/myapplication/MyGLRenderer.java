@@ -47,6 +47,7 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
     private RenderingForward    m_rendering_forward;
     private RenderingPeelingF2B m_peeling_f2b;
     private RenderingAB_Array   m_multifragment_ab_array;
+    private RenderingAB_LL      m_multifragment_ab_ll;
 
     private Shader              m_shader_color_render;
     private Shader              m_shader_depth_render;
@@ -80,11 +81,13 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
 
         m_rendering_forward   = new RenderingForward(m_context, m_rendering_settings.m_viewport);
         //m_peeling_f2b         = new RenderingPeelingF2B(m_context, m_rendering_settings.m_viewport);
-        m_multifragment_ab_array   = new RenderingAB_Array(m_context, m_rendering_settings.m_viewport, m_rendering_settings.m_max_layers);
+        //m_multifragment_ab_array   = new RenderingAB_Array(m_context, m_rendering_settings.m_viewport, m_rendering_settings.m_max_layers);
+        m_multifragment_ab_ll = new RenderingAB_LL(m_context, m_rendering_settings.m_viewport, m_rendering_settings.m_max_layers);
 
         m_rendering_methods.add(m_rendering_forward);
         //m_rendering_methods.add(m_peeling_f2b);
-        m_rendering_methods.add(m_multifragment_ab_array);
+        //m_rendering_methods.add(m_multifragment_ab_array);
+        m_rendering_methods.add(m_multifragment_ab_ll);
         m_current_rendering_method = 1;
 
         m_shader_color_render = new Shader(m_context, m_context.getString(R.string.SHADER_TEXTURE_COLOR_RENDERING_NAME));
@@ -167,12 +170,13 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         m_screen_quad_output.setViewport(width, height);
         m_screen_quad_debug.setViewport(width, height);
 
-        m_camera.computeProjectionMatrix(m_aabb.m_min,  m_aabb.m_max, m_rendering_settings.m_viewport.getAspectRatio());
-//        if(m_light.m_is_spotlight)
+        m_camera.computeProjectionMatrix(m_rendering_settings.m_viewport.getAspectRatio());
+
         for (Light light: m_lights)
-            light.m_camera.computeProjectionMatrix(m_aabb.m_min,  m_aabb.m_max, light.m_viewport.getAspectRatio());
-   //     else
-     //       m_light.m_camera.computeProjectionMatrix(50, 50);
+            if(light.m_is_spotlight)
+                light.m_camera.computeProjectionMatrix(light.m_viewport.getAspectRatio());
+             else
+                light.m_camera.computeProjectionMatrix(10, 10, 50); // how to compute this stuff?
 
         RenderingSettings.checkGlError("onSurfaceChanged");
     }
@@ -200,33 +204,13 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
 
         if(align_to_aabb)
         {
-            float padding = 1.1f;
-            // Update Camera
-            m_camera.m_eye[0]   = m_aabb.m_center[0] + dis*padding;
-            m_camera.m_eye[1]   = m_aabb.m_center[1] + dis*padding;
-            m_camera.m_eye[2]   = m_aabb.m_center[2] + dis*padding;
+            float camera_padding = 1.1f;
+            float light_padding  = 0.5f;
 
-            m_camera.m_target[0]= m_aabb.m_center[0];
-            m_camera.m_target[1]= m_aabb.m_center[1];
-            m_camera.m_target[2]= m_aabb.m_center[2];
+            m_camera.init(m_aabb, dis*camera_padding);
 
-            for (Light light: m_lights) {
-                light.init(m_aabb, dis);
-
-//                light.m_camera.m_target[0]= light.m_camera.m_target[1] = light.m_camera.m_target[2]= 0;
-//                light.m_camera.m_eye[0] = 60.0f;
-//                light.m_camera.m_eye[1] = 30.f;
-//                light.m_camera.m_eye[2] = 0.0f;
-//
-//                light.m_initial_position[0] = 60.0f;
-//                light.m_initial_position[1] = 30;
-//                light.m_initial_position[2] = 0.0f;
-            }
-//            m_camera.m_eye[0] = 60.0f;
-//            m_camera.m_eye[1] = 100.0f;
-//            m_camera.m_eye[2] = 170.0f;
-//
-//            m_camera.m_target[0]= m_camera.m_target[1] = m_camera.m_target[2]= 0.0f;
+            for (Light light: m_lights)
+                light.init(m_aabb, dis*light_padding);
         }
     }
 

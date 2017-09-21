@@ -25,7 +25,7 @@ class Light
 
     private boolean	    m_is_rendered;
     private boolean	    m_is_animated;
-    private boolean	    m_is_spotlight;
+    public  boolean	    m_is_spotlight;
     private boolean	    m_casts_shadows;
     private float	    m_spotlight_cutoff;
 
@@ -81,19 +81,19 @@ class Light
     {
         m_radius = aabb.m_radius/50f;
 
-        m_camera.m_eye[0]     = aabb.m_center[0] + dis/2;
-        m_camera.m_eye[1]     = aabb.m_center[1] + dis/2;
-        m_camera.m_eye[2]     = aabb.m_center[2] + dis/2;
+        m_camera.m_eye[0]     = aabb.m_center[0] + dis;
+        m_camera.m_eye[1]     = aabb.m_center[1] + dis;
+        m_camera.m_eye[2]     = aabb.m_center[2] + dis;
 
         m_camera.m_target[0]  = aabb.m_center[0];
         m_camera.m_target[1]  = aabb.m_center[1];
         m_camera.m_target[2]  = aabb.m_center[2];
 
+        m_camera.computeNearFarFields(aabb.m_min, aabb.m_max);
+
         m_initial_position[0] = m_camera.m_eye[0];
         m_initial_position[1] = m_camera.m_eye[1];
         m_initial_position[2] = m_camera.m_eye[2];
-
-        //m_light.m_camera.computeProjectionMatrix((int)aabb.m_radius, (int)aabb.m_radius, (int)aabb.m_radius);
 
         createUBO();
     }

@@ -1,6 +1,6 @@
 #include "version.h"
 
-layout (binding = 0, std140) uniform Matrices
+layout (std140) uniform Matrices
 {
     mat4 uniform_m;
     mat4 uniform_v;

@@ -41,6 +41,19 @@ class Camera {
         m_fov        = 30.0f;
     }
 
+    void init(AABB aabb, float dis)
+    {
+        m_eye[0]   = aabb.m_center[0] + dis;
+        m_eye[1]   = aabb.m_center[1] + dis;
+        m_eye[2]   = aabb.m_center[2] + dis;
+
+        m_target[0]= aabb.m_center[0];
+        m_target[1]= aabb.m_center[1];
+        m_target[2]= aabb.m_center[2];
+
+        computeNearFarFields(aabb.m_min,  aabb.m_max);
+    }
+
     void computeWorldMatrix()
     {
         Matrix.setRotateM(m_world_matrix, 0, m_world_rot_angle, m_world_rot_axis[0], m_world_rot_axis[1], m_world_rot_axis[2]);
@@ -51,7 +64,7 @@ class Camera {
         Matrix.setLookAtM(m_view_matrix, 0, m_eye[0], m_eye[1], m_eye[2], m_target[0], m_target[1], m_target[2],  m_up[0],  m_up[1],  m_up[2]);
     }
 
-    void computeProjectionMatrix(float [] b1, float [] b2, float aspect_ratio)
+    void computeNearFarFields(float [] b1, float [] b2)
     {
         float[] b1_eye = new float[3];
         b1_eye[0] = b1[0] - m_eye[0];
@@ -72,11 +85,15 @@ class Camera {
 
         m_near_field = 0.4f * Math.min(Util.dot(b1_eye, dir_eye), Util.dot(b2_eye, dir_eye));
         m_far_field  = 1.7f * Math.max(Util.dot(b1_eye, dir_eye), Util.dot(b2_eye, dir_eye));
+    }
 
+    void computeProjectionMatrix(float aspect_ratio)
+    {
         Matrix.perspectiveM(m_projection_matrix, 0, m_fov, aspect_ratio, m_near_field, m_far_field);
     }
+
     void computeProjectionMatrix(int width, int height, int depth)
     {
-        Matrix.orthoM(m_projection_matrix, 0, 0f, width, 0.0f, height, 0.0f, depth);// need fixing
+        Matrix.orthoM(m_projection_matrix, 0, -width, width, -height, height, -depth, depth);
     }
 }

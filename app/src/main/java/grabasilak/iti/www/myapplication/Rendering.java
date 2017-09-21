@@ -2,13 +2,13 @@ package grabasilak.iti.www.myapplication;
 
 import java.util.ArrayList;
 
-public abstract class Rendering
+abstract class Rendering
 {
-    protected String    m_name;
-    protected int       m_total_passes;
-    public    int []    m_texture_color = new int[1];
+    String    m_name;
+    int       m_total_passes;
+    int []    m_texture_color = new int[1];
 
-    public Rendering(String name)
+    Rendering(String name)
     {
         m_name          = name;
         m_total_passes  = 1;

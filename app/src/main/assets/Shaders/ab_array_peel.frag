@@ -1,135 +1,20 @@
 #include "version.h"
-
 #extension GL_OES_shader_image_atomic  : enable
 
 precision highp float;
 
-// IN
-in VS_OUT
-{
-	vec3 position_wcs_v;	// the position
-	vec4 position_lcs_v;	// the position in light space
-	vec3 normal_wcs_v;		// the normal
-	vec2 texcoord_v;		// the texture coordinates
-} fs_in;
+#include "inout.h"
+#include "uniforms.h"
+#include "illumination.h"
 
-// UNIFORM
-struct Camera
-{
-	vec3		position_wcs;
-};
-
-struct Textures
-{
-	sampler2D	diffuse;
-	sampler2D	normal;
-	sampler2D	specular;
-	sampler2D	emission;
-	sampler2D	shadow_map;
-};
-
-uniform Camera			uniform_camera;
-uniform Textures		uniform_textures;
-
-layout (std140) uniform Material
-{
-	ivec4		uniform_material_has_tex;		// diffuse, normal, specular, emission
-    vec4		uniform_material_diffuse_color; // .a = opacity
-	vec4		uniform_material_specular_color;// .a = gloss
-	vec3		uniform_material_emission_color;
-};
-
-layout (std140) uniform Light
-{
-	vec4		uniform_light_position_wcs;	    //.w == spot or directional
-	vec4		uniform_light_direction_wcs;    //.w == cast shadows.
-
-	vec3		uniform_light_ambient_color;
-	vec3		uniform_light_diffuse_color;
-	vec3		uniform_light_specular_color;
-
-	vec4		uniform_light_attenuation_cutoff;
-};
 
 layout(binding = 0, r32ui) uniform highp    coherent  uimage2D     uniform_image_counter;
 layout(binding = 1, r32f ) uniform highp    writeonly image2DArray uniform_image_peel_depth;
 layout(binding = 2, rgba8) uniform highp    writeonly image2DArray uniform_image_peel_color;
 
-// OUT
-layout(location = 0) out vec4 out_frag_color;
-
-#include "shadow_mapping.h"
-#include "phong_shading.h"
-
 void main()
 {
-	// [TEXTURES]
-	vec4 diffuse_tex = vec4(1.0f);
-	if (uniform_material_has_tex.x > 0)
-	{
-		diffuse_tex  = texture(uniform_textures.diffuse, fs_in.texcoord_v.xy);
-		if (diffuse_tex.a < 1.0f || uniform_material_diffuse_color.a < 1.0f)
-			discard;
-	}
-
-	vec4 specular_tex = vec4(1.0f);
-	if (uniform_material_has_tex.z > 0)
-		specular_tex  = texture(uniform_textures.specular, fs_in.texcoord_v.xy);
-
-	vec4 emission_tex = vec4(1.0f);
-	if (uniform_material_has_tex.w > 0)
-		emission_tex  = texture(uniform_textures.emission, fs_in.texcoord_v.xy);
-
-	//[SPOT][OR][DIRECTIONAL][LIGHT]
-	bool	is_spot_light		= (uniform_light_position_wcs.w == 1.0f) ? true : false;
-	vec3	light_direction_wcs = (is_spot_light) ? uniform_light_direction_wcs.xyz : -uniform_light_position_wcs.xyz;
-
-	vec3	vertex_to_light_wcs = uniform_light_position_wcs.xyz - fs_in.position_wcs_v;
-	float	dist_to_light		= length	(vertex_to_light_wcs);
-			vertex_to_light_wcs	= normalize	(vertex_to_light_wcs);
-	vec3	normal_wcs			= normalize	(fs_in.normal_wcs_v);
-
-    // BACK-FACE SHADING
-	if(!gl_FrontFacing) normal_wcs = -normal_wcs;
-
-	// [SPOTLIGHT]
-	float	attenuation_factor	= (is_spot_light) ? lightGetAttenuation(dist_to_light)                      : 1.0f;
-	float	spot_angle_factor	= (is_spot_light) ? lightGetSpot(-vertex_to_light_wcs, light_direction_wcs) : 1.0f;
-
-	// [DIFFUSE]
-	float	diffuse_angle_factor= (!is_spot_light || spot_angle_factor > 0.0f) ?
-			lightGetDiffuse(normal_wcs, vertex_to_light_wcs)		 : 0.0f;
-
-	// [SPECULAR]
-	float	specular_shininess	= (diffuse_angle_factor > 0.0f) ?
-			lightGetSpecular(normal_wcs, light_direction_wcs)		 : 0.0f;
-
-	// [SHADOW MAPPING]
-#ifdef SHADOW_MAPPING
-	float   cast_shadows		= uniform_light_direction_wcs.a;
-	float	shadow_factor		= (cast_shadows == 1.0f) ? ((diffuse_angle_factor > 0.0f) ? lightGetShadow(diffuse_angle_factor) : 0.0f) : 1.0f;
-#else
-	float	shadow_factor		= 1.0f;
-#endif
-
-	// [FINAL FACTORS]
-	float	diffuse_factor		= diffuse_angle_factor	* spot_angle_factor * shadow_factor;
-	float	specular_factor		= specular_shininess	* shadow_factor;
-
-	// [FINAL COLORS]
-	vec3	diffuse_color		= vec3(uniform_material_diffuse_color)  * diffuse_tex.rgb;
-	vec3	specular_color		= vec3(uniform_material_specular_color) * specular_tex.rgb;
-	vec3	emission_color		= vec3(uniform_material_emission_color) * emission_tex.rgb;
-
-	// [FINAL COLORS]
-	vec3	ambient_color_final  = uniform_light_ambient_color  * diffuse_color;
-	vec3	diffuse_color_final  = uniform_light_diffuse_color  * diffuse_color  * diffuse_factor;
-	vec3	specular_color_final = uniform_light_specular_color * specular_color * specular_factor;
-	vec3	emission_color_final = emission_color;
-
-	vec3	lighting_color_final = vec3(ambient_color_final + diffuse_color_final)*attenuation_factor + emission_color_final;
-
-    vec4    color_final          = vec4(lighting_color_final, uniform_material_diffuse_color.a);
+    vec4    color_final = compute_color();
 
     // A-Buffer Construction
     {

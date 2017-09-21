@@ -30,7 +30,7 @@ float lightGetDiffuse(const vec3 normal_wcs, const vec3 vertex_to_light_wcs)
 
 float lightGetSpecular(const vec3 normal_wcs, const vec3 light_direction_wcs)
 {
-	vec3	vertex_to_camera_wcs = normalize(uniform_camera.position_wcs - fs_in.position_wcs_v);
+	vec3	vertex_to_camera_wcs = normalize(uniform_camera_position_wcs - fs_in.position_wcs_v);
 
 #ifdef BLINN_PHONG_SHADING
     float	specular_shininess = uniform_material_specular_color.a * 2.;
