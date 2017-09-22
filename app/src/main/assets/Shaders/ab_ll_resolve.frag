@@ -8,49 +8,41 @@ precision highp float;
 #include "sort.h"
 #include "data_structs.h"
 
-layout(binding = 0, r32ui) uniform highp   readonly uimage2D      uniform_image_counter;
-layout(binding = 1, r32ui) uniform highp   readonly uimage2D      uniform_image_head;
+layout(binding = 0, r32ui) uniform highp   readonly uimage2D      uniform_image_head;
 layout(binding = 4, std430)        highp   readonly buffer LinkedLists { NodeTypeLL nodes[]; };
 
-uint  getPixelFragCounter    ()                  {return imageLoad (uniform_image_counter   , ivec2(gl_FragCoord.xy)).r;}
-uint  getPixelFragHead       ()                  {return imageLoad (uniform_image_head      , ivec2(gl_FragCoord.xy)).r;}
+uint  getPixelFragHead() {return imageLoad (uniform_image_head, ivec2(gl_FragCoord.xy)).r;}
 
 layout(location = 0) out vec4 out_frag_color;
 
 void main()
 {
-    int layer        = 0;
-    int counterTotal = int(getPixelFragCounter());
-
-    if(counterTotal > 0)
+    int  layer = 0;
+    uint index = getPixelFragHead();
+    if(index > 0u)
     {
-        counterTotal = min(counterTotal,LOCAL_SIZE);
-
-        uint index = getPixelFragHead();
-
-#ifdef HEATMAP_ENABLED
-        //out_frag_color  = vec4(getValueBetweenTwoFixedColors(float(counterTotal)/float(LOCAL_SIZE+1), GREEN, RED), 1.0f);
-        return;
-#endif
-
 // 1. LOCAL STORAGE
-    	for(int i=0; i<counterTotal && index != 0u; i++)
+        int counter = 0;
+    	while(index != 0u)
     	{
-			fragments[i] = vec2(float(index), nodes[index].depth);
-			index	     = nodes[index].next;
+			fragments[counter] = vec2(float(index), nodes[index].depth);
+			index	           = nodes[index].next;
+			counter++;
         }
+        counter = min(counter,LOCAL_SIZE);
+
 // 2. SORT
-        sort(counterTotal);
+        sort(counter);
 
 // LAYER
       //  int id = int(fragments[layer].r);
-      //  out_frag_color = nodes[id].color;
+      //  out_frag_color = unpackUnorm4x8(nodes[id].color);
       //  out_frag_color = vec4(fragments[layer].g);
 
 // 3. RESOLVE
         vec4 finalColor = vec4(0.0f);
-        for(int i=0; i<counterTotal; i++)
-            finalColor += nodes[int(fragments[i].r)].color*(1.0f-finalColor.a);
+        for(int i=0; i<counter; i++)
+            finalColor += unpackUnorm4x8(nodes[int(fragments[i].r)].color)*(1.0f-finalColor.a);
         out_frag_color = finalColor;
     }
     else
