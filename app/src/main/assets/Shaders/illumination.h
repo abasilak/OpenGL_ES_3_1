@@ -41,7 +41,7 @@ vec4 compute_color()
 
 	// [SPECULAR]
 	float	specular_shininess	= (diffuse_angle_factor > 0.0f) ?
-			lightGetSpecular(normal_wcs, light_direction_wcs)		 : 0.0f;
+			lightGetSpecular(normal_wcs, normalize(light_direction_wcs))		 : 0.0f;
 
 	// [SHADOW MAPPING]
 #ifdef SHADOW_MAPPING
@@ -66,7 +66,7 @@ vec4 compute_color()
 	vec3	specular_color_final = uniform_light_specular_color * specular_color * specular_factor;
 	vec3	emission_color_final = emission_color;
 
-	vec3	lighting_color_final = vec3(ambient_color_final + diffuse_color_final)*attenuation_factor + emission_color_final;
+	vec3	lighting_color_final = vec3(specular_color_final)*attenuation_factor + emission_color_final;
 
     return  vec4(lighting_color_final, uniform_material_diffuse_color.a);
 }

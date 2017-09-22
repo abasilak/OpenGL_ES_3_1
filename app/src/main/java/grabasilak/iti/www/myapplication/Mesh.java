@@ -62,7 +62,6 @@ import static android.opengl.GLES31.glGetUniformLocation;
 import static android.opengl.GLES31.glUseProgram;
 import static android.opengl.GLES31.glVertexAttribPointer;
 import static grabasilak.iti.www.myapplication.Util.m_sizeofM44;
-import static grabasilak.iti.www.myapplication.Util.m_sizeofV4;
 
 class Mesh
 {
@@ -80,7 +79,7 @@ class Mesh
     private final int []        m_indices_vbo     = new int[1];
 
     // Indirect Buffer Objects
-    private final int []        m_indirect_bo    = new int[1];
+    //private final int []        m_indirect_bo    = new int[1];
 
     // Uniform Buffer Object
     private final int []        m_ubo             = new int[1];
@@ -94,7 +93,7 @@ class Mesh
     private FloatBuffer         m_normals_buffer;
     private FloatBuffer         m_uvs_buffer;
     private IntBuffer           m_indices_buffer;
-    private IntBuffer           m_indirect_buffer;
+    //private IntBuffer           m_indirect_buffer;
 
     private FloatBuffer         mw_matrix_buffer;
     private FloatBuffer         v_matrix_buffer;
@@ -110,11 +109,11 @@ class Mesh
     private float m_normals_data[];
     private float m_uvs_data[];
     private int   m_indices_data[];
-    private int   m_indirect_data[];
-
-    private ElementsIndirectCommand m_commands[];
 
     private ArrayList<MeshPrimitiveGroup>   m_primitive_groups;
+
+    //private int   m_indirect_data[];
+    //private ElementsIndirectCommand m_commands[];
 
     Mesh(Context context, String name)
     {
@@ -262,10 +261,9 @@ class Mesh
             glActiveTexture(GL_TEXTURE4);
             glBindTexture(GL_TEXTURE_2D, lights.get(0).m_shadow_mapping.getTextureDepth());
 
-            // 4. SET UBOs
-
+            int end;
             glBindVertexArray ( m_vao[0] );
-            for (int i = 0, start = 0, end = m_primitive_groups.get(i).m_primitives.size()*3; i < m_primitive_groups.size(); i++, start += end)
+            for (int i = 0, start = 0; i < m_primitive_groups.size(); i++, start += end)
             {
                 if ( m_primitive_groups.get(i).m_material.m_diffuse_tex.m_loaded)
                 {
@@ -291,14 +289,16 @@ class Mesh
                     glBindTexture(GL_TEXTURE_2D,  m_primitive_groups.get(i).m_material.m_emission_tex.m_id);
                 }
 
+                // 4. SET UBO
                 glBindBuffer(GL_UNIFORM_BUFFER, m_ubo[0]);
                 {
-                    glBufferSubData(GL_UNIFORM_BUFFER, 0, m_sizeofV4*4, m_primitive_groups.get(i).m_material_buffer);
+                    glBufferSubData(GL_UNIFORM_BUFFER, 0, m_sizeofM44, m_primitive_groups.get(i).m_material_buffer);
                 }
                 glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
                 // 3. DRAW
                 {
+                    end = m_primitive_groups.get(i).m_primitives.size()*3;
                     glDrawRangeElements(GL_TRIANGLES, start, start + end, end, GL_UNSIGNED_INT, start*Integer.BYTES);
                 }
             }
@@ -364,8 +364,9 @@ class Mesh
             glActiveTexture(GL_TEXTURE5);
             glBindTexture(GL_TEXTURE_2D, texture_depth);
 
+            int end;
             glBindVertexArray ( m_vao[0] );
-            for (int i = 0, start = 0, end = m_primitive_groups.get(i).m_primitives.size()*3; i < m_primitive_groups.size(); i++, start += end)
+            for (int i = 0, start = 0; i < m_primitive_groups.size(); i++, start += end)
             {
                 if ( m_primitive_groups.get(i).m_material.m_diffuse_tex.m_loaded)
                 {
@@ -391,24 +392,25 @@ class Mesh
                     glBindTexture(GL_TEXTURE_2D,  m_primitive_groups.get(i).m_material.m_emission_tex.m_id);
                 }
 
-                // 4. SET UBOs
+                // 4. SET UBO
                 glBindBuffer(GL_UNIFORM_BUFFER, m_ubo[0]);
                 {
-                    glBufferSubData(GL_UNIFORM_BUFFER, 0, m_sizeofV4*4, m_primitive_groups.get(i).m_material_buffer);
+                    glBufferSubData(GL_UNIFORM_BUFFER, 0, m_sizeofM44, m_primitive_groups.get(i).m_material_buffer);
                 }
                 glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
                 // 5. DRAW
                 {
+                    end = m_primitive_groups.get(i).m_primitives.size()*3;
                     glDrawRangeElements(GL_TRIANGLES, start, start + end, end, GL_UNSIGNED_INT, start*Integer.BYTES);
                 }
             }
             glBindVertexArray ( 0 );
 
-            //for (int i = 0; i < 5; i++)
+            for (int i = 0; i < 5; i++)
             {
-                //glActiveTexture(GL_TEXTURE0 + i);
-                //glBindTexture(GL_TEXTURE_2D, 0);
+                glActiveTexture(GL_TEXTURE0 + i);
+                glBindTexture(GL_TEXTURE_2D, 0);
             }
         }
         glUseProgram(0);
@@ -580,7 +582,7 @@ class Mesh
             }
         }
 
-        Log.d("OBJ OBJECT DATA", "V = " + m_vertices.size() + " VN = " + m_uvs.size() + " VT = " + m_normals.size() + " G = " + m_primitive_groups.size() );
+        Log.d("OBJ OBJECT DATA", "V = " + m_vertices.size() + " VT = " + m_uvs.size() + " VN = " + m_normals.size() + " G = " + m_primitive_groups.size() );
 
         fillInBuffers();
 
@@ -792,7 +794,7 @@ class Mesh
         {
             glBufferData(GL_ARRAY_BUFFER, m_vertices_data.length * Float.BYTES, m_vertices_buffer, GL_STATIC_DRAW);
         }
-        //glBindBuffer ( GL_ARRAY_BUFFER, 0 );
+        glBindBuffer ( GL_ARRAY_BUFFER, 0 );
 
         if(!m_normals.isEmpty())
         {
@@ -801,7 +803,7 @@ class Mesh
             {
                 glBufferData(GL_ARRAY_BUFFER, m_normals_data.length * Float.BYTES, m_normals_buffer, GL_STATIC_DRAW);
             }
-            //glBindBuffer(GL_ARRAY_BUFFER, 0);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
         }
 
         if(!m_uvs.isEmpty())
@@ -811,7 +813,7 @@ class Mesh
             {
                 glBufferData(GL_ARRAY_BUFFER, m_uvs_data.length * Float.BYTES, m_uvs_buffer, GL_STATIC_DRAW);
             }
-           // glBindBuffer(GL_ARRAY_BUFFER, 0);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
         }
 
         glGenBuffers ( 1, m_indices_vbo, 0 );
@@ -819,7 +821,7 @@ class Mesh
         {
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indices_data.length * Integer.BYTES, m_indices_buffer, GL_STATIC_DRAW);
         }
-        //glBindBuffer ( GL_ELEMENT_ARRAY_BUFFER, 0 );
+        glBindBuffer ( GL_ELEMENT_ARRAY_BUFFER, 0 );
 
         //glGenBuffers ( 1, m_indirect_bo, 0 );
       //  glBindBuffer(GL_DRAW_INDIRECT_BUFFER, m_indirect_bo[0]);
@@ -854,7 +856,7 @@ class Mesh
 
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_indices_vbo[0]);
         }
-        //glBindVertexArray ( 0 );
+        glBindVertexArray ( 0 );
     }
 
     private void createUBO()
@@ -862,7 +864,7 @@ class Mesh
         glGenBuffers(1, m_ubo, 0);
         glBindBuffer(GL_UNIFORM_BUFFER, m_ubo[0]);
         {
-            glBufferData(GL_UNIFORM_BUFFER, 4 * m_sizeofV4, null, GL_DYNAMIC_DRAW);
+            glBufferData(GL_UNIFORM_BUFFER, m_sizeofM44, null, GL_DYNAMIC_DRAW);
         }
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
         glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_ubo[0]);

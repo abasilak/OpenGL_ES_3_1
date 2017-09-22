@@ -1,5 +1,9 @@
 #define POINT_LIGHT_LINEAR_ATT
-#define BLINN_PHONG_SHADING
+//#define BLINN_PHONG_SHADING
+
+#ifndef PI
+#define PI 3.1415936
+#endif // PI
 
 float lightGetAttenuation(const float dist_to_light)
 {
@@ -37,7 +41,7 @@ float lightGetSpecular(const vec3 normal_wcs, const vec3 light_direction_wcs)
 	vec3	reflect_wcs = normalize(light_direction_wcs + vertex_to_camera_wcs);
 #else
     float	specular_shininess = uniform_material_specular_color.a;
-	vec3	reflect_wcs	= reflect(-light_direction_wcs, normal_wcs);
+	vec3	reflect_wcs	= normalize(reflect(light_direction_wcs, normal_wcs));
 #endif
     return	pow(max(0.0f, dot(vertex_to_camera_wcs, reflect_wcs)), specular_shininess);
 }

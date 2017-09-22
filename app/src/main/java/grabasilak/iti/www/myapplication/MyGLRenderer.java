@@ -13,6 +13,7 @@ import javax.microedition.khronos.opengles.GL10;
 import static android.opengl.GLES20.GL_BACK;
 import static android.opengl.GLES20.GL_CCW;
 import static android.opengl.GLES20.GL_COLOR_BUFFER_BIT;
+import static android.opengl.GLES20.GL_CULL_FACE;
 import static android.opengl.GLES20.GL_DEPTH_BUFFER_BIT;
 import static android.opengl.GLES20.glClear;
 import static android.opengl.GLES20.glCullFace;
@@ -29,6 +30,7 @@ import static android.opengl.GLES31.glClearDepthf;
 import static android.opengl.GLES31.glDepthFunc;
 import static android.opengl.GLES31.glEnable;
 import static android.opengl.GLES31.glGenBuffers;
+import static grabasilak.iti.www.myapplication.Util.m_sizeofM44;
 import static grabasilak.iti.www.myapplication.Util.m_theta;
 
 class MyGLRenderer implements GLSurfaceView.Renderer {
@@ -82,13 +84,13 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         m_rendering_forward   = new RenderingForward(m_context, m_rendering_settings.m_viewport);
         //m_peeling_f2b         = new RenderingPeelingF2B(m_context, m_rendering_settings.m_viewport);
         //m_multifragment_ab_array   = new RenderingAB_Array(m_context, m_rendering_settings.m_viewport, m_rendering_settings.m_max_layers);
-        m_multifragment_ab_ll = new RenderingAB_LL(m_context, m_rendering_settings.m_viewport, m_rendering_settings.m_max_layers);
+        //m_multifragment_ab_ll = new RenderingAB_LL(m_context, m_rendering_settings.m_viewport, m_rendering_settings.m_max_layers);
 
         m_rendering_methods.add(m_rendering_forward);
         //m_rendering_methods.add(m_peeling_f2b);
         //m_rendering_methods.add(m_multifragment_ab_array);
-        m_rendering_methods.add(m_multifragment_ab_ll);
-        m_current_rendering_method = 1;
+        //m_rendering_methods.add(m_multifragment_ab_ll);
+        m_current_rendering_method = 0;
 
         m_shader_color_render = new Shader(m_context, m_context.getString(R.string.SHADER_TEXTURE_COLOR_RENDERING_NAME));
         m_shader_depth_render = new Shader(m_context, m_context.getString(R.string.SHADER_TEXTURE_DEPTH_RENDERING_NAME));
@@ -124,7 +126,7 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         glDepthFunc(GL_LEQUAL);
 
         // Set Culling Test
-        //glEnable(GL_CULL_FACE);
+        glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
         glFrontFace(GL_CCW);
 
@@ -154,8 +156,24 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
 
             m_screen_quad_output.setTextureList (new ArrayList<>(Collections.singletonList(m_rendering_methods.get(m_current_rendering_method).m_texture_color[0])));
             m_screen_quad_output.draw();
-            m_screen_quad_debug.setTextureList  (new ArrayList<>(Collections.singletonList(m_lights.get(0).m_shadow_mapping.getTextureDepth())));
+            m_screen_quad_debug.setTextureList  (new ArrayList<>(Collections.singletonList(m_rendering_methods.get(m_current_rendering_method).getTextureDepth())));
             m_screen_quad_debug.draw();
+
+            /*
+            glViewport(0, 0, m_rendering_settings.m_viewport.m_width, m_rendering_settings.m_viewport.m_height);
+
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, m_rendering_methods.get(m_current_rendering_method).getFBO());
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
+            glReadBuffer(GL_COLOR_ATTACHMENT0);
+            glDrawBuffers(1, new int[]{GL_BACK}, 0);
+
+            glBlitFramebuffer(  0, 0, m_rendering_settings.m_viewport.m_width, m_rendering_settings.m_viewport.m_height,
+                                0, 0, m_rendering_settings.m_viewport.m_width, m_rendering_settings.m_viewport.m_height,
+                                GL_COLOR_BUFFER_BIT, GL_NEAREST);*/
+
         }
         m_text_manager.draw(m_rendering_settings.m_viewport);
 
@@ -219,7 +237,7 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         glGenBuffers(1, m_ubo_matrices, 0);
         glBindBuffer(GL_UNIFORM_BUFFER, m_ubo_matrices[0]);
         {
-            glBufferData(GL_UNIFORM_BUFFER, 5 * 16 * Float.BYTES, null, GL_DYNAMIC_DRAW); // 5 Mat4x4 are included in this UBO
+            glBufferData(GL_UNIFORM_BUFFER, 5 * m_sizeofM44, null, GL_DYNAMIC_DRAW); // 5 Mat4x4 are included in this UBO
         }
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_ubo_matrices[0]);
@@ -227,7 +245,6 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
 
     private void    setupText()
     {
-        // Create our text manager
         m_text_manager = new TextManager(m_context);
         m_text_manager.m_texture.load(m_context, "Font/font.png");
         m_text_manager.setUniformscale(1);

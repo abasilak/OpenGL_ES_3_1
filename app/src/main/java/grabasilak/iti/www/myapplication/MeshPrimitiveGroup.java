@@ -44,7 +44,7 @@ class MeshPrimitiveGroup
         material_data[14] = m_material.m_emission[2];
         material_data[15] = 0.0f; // not used
 
-        m_material_buffer = ByteBuffer.allocateDirect ( m_sizeofM44 * 4).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
+        m_material_buffer = ByteBuffer.allocateDirect (m_sizeofM44).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
         m_material_buffer.put (material_data);
         m_material_buffer.position ( 0 );
     }

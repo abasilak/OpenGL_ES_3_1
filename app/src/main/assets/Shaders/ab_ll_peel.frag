@@ -19,7 +19,8 @@ void main()
 
     if(page_id < uint(nodes.length()))
     {
-        vec4 color_final = compute_color();
+        //vec4 color_final = compute_color();
+        vec4 color_final = vec4(compute_color().rgb, 0.5f);
 
         uint prev_id = imageAtomicExchange(uniform_image_head, ivec2(gl_FragCoord.xy), page_id);
 

@@ -1,6 +1,6 @@
 #include "version.h"
 
-precision mediump float;
+layout (early_fragment_tests) in;
 
 void main(void)
 {

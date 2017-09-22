@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import static android.opengl.GLES20.GL_CLAMP_TO_EDGE;
 import static android.opengl.GLES20.GL_COLOR_ATTACHMENT0;
 import static android.opengl.GLES20.GL_COLOR_BUFFER_BIT;
+import static android.opengl.GLES20.GL_CULL_FACE;
 import static android.opengl.GLES20.GL_DEPTH_ATTACHMENT;
 import static android.opengl.GLES20.GL_DEPTH_BUFFER_BIT;
 import static android.opengl.GLES20.GL_DEPTH_COMPONENT;
@@ -23,17 +24,14 @@ import static android.opengl.GLES20.GL_UNSIGNED_BYTE;
 import static android.opengl.GLES20.glBindFramebuffer;
 import static android.opengl.GLES20.glBindTexture;
 import static android.opengl.GLES20.glClear;
-import static android.opengl.GLES20.glClearColor;
-import static android.opengl.GLES20.glClearDepthf;
+import static android.opengl.GLES20.glDisable;
+import static android.opengl.GLES20.glEnable;
 import static android.opengl.GLES20.glFramebufferTexture2D;
 import static android.opengl.GLES20.glGenFramebuffers;
 import static android.opengl.GLES20.glGenTextures;
 import static android.opengl.GLES20.glTexImage2D;
 import static android.opengl.GLES20.glTexParameteri;
-import static android.opengl.GLES30.GL_COLOR_ATTACHMENT1;
 import static android.opengl.GLES30.GL_DEPTH_COMPONENT32F;
-import static android.opengl.GLES30.GL_R32F;
-import static android.opengl.GLES30.GL_RED;
 import static android.opengl.GLES30.GL_SRGB8_ALPHA8;
 import static android.opengl.GLES30.glDrawBuffers;
 
@@ -46,12 +44,12 @@ class RenderingPeelingF2B extends Rendering
 
     private int []	m_fbo           = new int[2];
     private int []	m_texture_depth = new int[2];
-    private int []	m_texture_depth2 = new int[2];
+
     RenderingPeelingF2B(Context context, Viewport viewport)
     {
         super("F2B Peeling");
 
-        m_total_passes  = 2;
+        m_total_passes  = 1;
         m_shader_peel   = new Shader(context, context.getString(R.string.SHADER_F2B_PEELING_NAME));
 
         createFBO(viewport);
@@ -61,7 +59,6 @@ class RenderingPeelingF2B extends Rendering
     {
         glGenFramebuffers(2, m_fbo, 0);
         glGenTextures(2, m_texture_depth, 0);
-        glGenTextures(2, m_texture_depth2, 0);
         glGenTextures(1, m_texture_color, 0);
 
         // Texture Color
@@ -88,22 +85,11 @@ class RenderingPeelingF2B extends Rendering
             }
             glBindTexture(GL_TEXTURE_2D, 0);
 
-            glBindTexture(GL_TEXTURE_2D, m_texture_depth2[i]);
-            {
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, viewport.m_width, viewport.m_height, 0, GL_RED, GL_FLOAT, null);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            }
-            glBindTexture(GL_TEXTURE_2D, 0);
-
             // Framebuffer Object
             glBindFramebuffer(GL_FRAMEBUFFER, m_fbo[i]);
             {
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT , GL_TEXTURE_2D, m_texture_depth[i], 0);
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_texture_color[0], 0);
-                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, m_texture_depth2[i], 0);
             }
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
             RenderingSettings.checkFramebufferStatus();
@@ -119,6 +105,8 @@ class RenderingPeelingF2B extends Rendering
         {
             rendering_settings.m_viewport.setViewport();
 
+            glDisable(GL_CULL_FACE);
+
             m_passes = 0;
             while (m_passes < m_total_passes)
             {
@@ -127,13 +115,7 @@ class RenderingPeelingF2B extends Rendering
 
                 glBindFramebuffer(GL_FRAMEBUFFER, m_fbo[m_currID]);
                 {
-                    glDrawBuffers(2, new int[]{GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1}, 0);
-                    glClearDepthf(1.0f);
-                    glClearColor(1,
-                            1,
-                            1,
-                            1);
-
+                    glDrawBuffers(1, new int[]{GL_COLOR_ATTACHMENT0}, 0);
                     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
                     for (Mesh mesh: meshes)
@@ -143,6 +125,8 @@ class RenderingPeelingF2B extends Rendering
 
                 m_passes++;
             }
+
+            glEnable(GL_CULL_FACE);
         }
         rendering_settings.m_fps.end();
 

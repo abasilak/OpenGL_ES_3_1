@@ -11,6 +11,7 @@ import static android.opengl.GLES10.GL_DEPTH_TEST;
 import static android.opengl.GLES20.GL_CLAMP_TO_EDGE;
 import static android.opengl.GLES20.GL_COLOR_ATTACHMENT0;
 import static android.opengl.GLES20.GL_COLOR_BUFFER_BIT;
+import static android.opengl.GLES20.GL_CULL_FACE;
 import static android.opengl.GLES20.GL_DEPTH_ATTACHMENT;
 import static android.opengl.GLES20.GL_DEPTH_BUFFER_BIT;
 import static android.opengl.GLES20.GL_DEPTH_COMPONENT;
@@ -59,7 +60,7 @@ import static android.opengl.GLES31.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT;
 import static android.opengl.GLES31.GL_SHADER_STORAGE_BARRIER_BIT;
 import static android.opengl.GLES31.GL_SHADER_STORAGE_BUFFER;
 import static android.opengl.GLES31.glBindImageTexture;
-import static android.opengl.GLES31.glMemoryBarrier;
+import static android.opengl.GLES31.glMemoryBarrierByRegion;
 
 class RenderingAB_LL extends Rendering
 {
@@ -67,6 +68,7 @@ class RenderingAB_LL extends Rendering
     private int    m_generated_fragments;
     private int    m_total_fragments;
 
+    private int     m_barriers;
     private boolean m_realloc_memory_enabled;
 
     private Shader m_shader_init;
@@ -110,6 +112,7 @@ class RenderingAB_LL extends Rendering
 
         m_atomic_counter_data[0] = 0;
         m_realloc_memory_enabled = false;
+        m_barriers = (m_realloc_memory_enabled) ? GL_ATOMIC_COUNTER_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT : GL_SHADER_STORAGE_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT;
 
         createFBO(viewport);
     }
@@ -126,7 +129,7 @@ class RenderingAB_LL extends Rendering
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         }
-        //glBindTexture(GL_TEXTURE_2D, 0);
+        glBindTexture(GL_TEXTURE_2D, 0);
 
         // Texture Depth
         glGenTextures(1, m_texture_depth, 0);
@@ -201,6 +204,7 @@ class RenderingAB_LL extends Rendering
                 glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, m_ssbo_peel[0]);
 
                 glColorMask(false, false, false, false);
+                glDisable(GL_CULL_FACE);
                 glDisable(GL_DEPTH_TEST);
                 glDepthMask(false);
 
@@ -218,13 +222,13 @@ class RenderingAB_LL extends Rendering
                         }
                         glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
                     }
-                    glMemoryBarrier(GL_ATOMIC_COUNTER_BARRIER_BIT);
+                    glMemoryBarrierByRegion(GL_ATOMIC_COUNTER_BARRIER_BIT);
 
                     // 0.b INIT Counter & Head
                     {
                         m_screen_quad_init.draw();
                     }
-                    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+                    glMemoryBarrierByRegion(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
                     // 1.a PEEL
                     {
@@ -233,7 +237,7 @@ class RenderingAB_LL extends Rendering
                             mesh.draw(m_shader_peel.getProgram(), camera, lights, ubo_matrices);
                         //glEndQuery(GL_SAMPLES_PASSED);
                     }
-                    glMemoryBarrier(GL_ATOMIC_COUNTER_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+                    glMemoryBarrierByRegion(m_barriers);
 
                     // 1.b COMPUTE TOTAL FRAGMENTS
                     if(m_realloc_memory_enabled)
@@ -265,6 +269,7 @@ class RenderingAB_LL extends Rendering
                 }
                 // 2. RESOLVE
                 glColorMask(true, true, true, true);
+                glEnable(GL_CULL_FACE);
                 glEnable(GL_DEPTH_TEST);
                 glDepthMask(true);
 
@@ -275,8 +280,8 @@ class RenderingAB_LL extends Rendering
                 }
 
                 glBindImageTexture(0, 0, 0, false, 0, GL_READ_WRITE, GL_R32UI);
-                glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 4, 0);
-                glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, 0);
+                glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 3, 0);
+                glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, 0);
             }
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }
