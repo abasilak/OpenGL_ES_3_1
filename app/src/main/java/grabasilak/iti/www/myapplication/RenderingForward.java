@@ -46,6 +46,10 @@ class RenderingForward extends Rendering
 
         m_shader_render = new Shader(context, context.getString(R.string.SHADER_FORWARD_RENDERING_NAME));
 
+//        int []	phong_shading_index = new int[1];
+  //      phong_shading_index[0] = glGetSubroutineIndex(m_shader_render.getProgram(), GL_FRAGMENT_SHADER, "phong_shading");
+    //    glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, phong_shading_index[0]);
+
         createFBO(viewport);
     }
 

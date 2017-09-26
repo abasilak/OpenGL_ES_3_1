@@ -82,15 +82,15 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         addMesh(m_context.getString(R.string.MESH_NAME), true);
 
         m_rendering_forward   = new RenderingForward(m_context, m_rendering_settings.m_viewport);
-        //m_peeling_f2b         = new RenderingPeelingF2B(m_context, m_rendering_settings.m_viewport);
+        m_peeling_f2b         = new RenderingPeelingF2B(m_context, m_rendering_settings.m_viewport);
         //m_multifragment_ab_array   = new RenderingAB_Array(m_context, m_rendering_settings.m_viewport, m_rendering_settings.m_max_layers);
         //m_multifragment_ab_ll = new RenderingAB_LL(m_context, m_rendering_settings.m_viewport, m_rendering_settings.m_max_layers);
 
         m_rendering_methods.add(m_rendering_forward);
-        //m_rendering_methods.add(m_peeling_f2b);
+        m_rendering_methods.add(m_peeling_f2b);
         //m_rendering_methods.add(m_multifragment_ab_array);
         //m_rendering_methods.add(m_multifragment_ab_ll);
-        m_current_rendering_method = 0;
+        m_current_rendering_method = 1;
 
         m_shader_color_render = new Shader(m_context, m_context.getString(R.string.SHADER_TEXTURE_COLOR_RENDERING_NAME));
         m_shader_depth_render = new Shader(m_context, m_context.getString(R.string.SHADER_TEXTURE_DEPTH_RENDERING_NAME));
@@ -130,6 +130,11 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         glCullFace(GL_BACK);
         glFrontFace(GL_CCW);
 
+        //int khr_ids[] = { 131185, 131218, 102 };
+        //glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_KHR);
+        //glDebugMessageControlKHR(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 3, khr_ids, 0, false);
+        //GLES31Ext.glDebugMessageCallbackKHR();
+
         RenderingSettings.checkGlError("onSurfaceCreated");
     }
 
@@ -156,7 +161,7 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
 
             m_screen_quad_output.setTextureList (new ArrayList<>(Collections.singletonList(m_rendering_methods.get(m_current_rendering_method).m_texture_color[0])));
             m_screen_quad_output.draw();
-            m_screen_quad_debug.setTextureList  (new ArrayList<>(Collections.singletonList(m_rendering_methods.get(m_current_rendering_method).getTextureDepth())));
+            m_screen_quad_debug.setTextureList  (new ArrayList<>(Collections.singletonList(m_lights.get(0).m_shadow_mapping.getTextureDepth())));
             m_screen_quad_debug.draw();
 
             /*

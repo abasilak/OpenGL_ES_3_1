@@ -2,21 +2,24 @@ package grabasilak.iti.www.myapplication;
 
 import java.util.ArrayList;
 
+import static android.opengl.GLES30.glGenQueries;
+
 abstract class Rendering
 {
     String    m_name;
     int       m_struct_size;
     int       m_total_passes;
     int []    m_texture_color   = new int[1];
-   // int []    m_occlusion_query = new int[1];
-   // int []    m_occlusion_query_result = new int[1];
+    int []    m_occlusion_query = new int[1];
+    int []    m_occlusion_query_result = new int[1];
 
     Rendering(String name)
     {
         m_name          = name;
         m_total_passes  = 1;
 
-     //   glGenQueries(1, m_occlusion_query, 0);
+        glGenQueries(1, m_occlusion_query, 0);
+        m_occlusion_query_result[0] = 1;
     }
 
     abstract boolean     createFBO(Viewport viewport);

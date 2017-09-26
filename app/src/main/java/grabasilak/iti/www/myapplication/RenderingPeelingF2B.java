@@ -108,7 +108,7 @@ class RenderingPeelingF2B extends Rendering
             glDisable(GL_CULL_FACE);
 
             m_passes = 0;
-            while (m_passes < m_total_passes)
+            while (m_passes < m_total_passes && m_occlusion_query_result[0] > 0)
             {
                 m_currID = m_passes % 2;
                 m_prevID = 1 - m_currID;
@@ -118,8 +118,13 @@ class RenderingPeelingF2B extends Rendering
                     glDrawBuffers(1, new int[]{GL_COLOR_ATTACHMENT0}, 0);
                     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-                    for (Mesh mesh: meshes)
-                        mesh.peel(m_shader_peel.getProgram(), camera, lights, ubo_matrices, m_texture_depth[m_prevID], rendering_settings);
+                    //glBeginQuery(GL_ANY_SAMPLES_PASSED, m_occlusion_query[0]);
+                    {
+                        for (Mesh mesh : meshes)
+                            mesh.peel(m_shader_peel.getProgram(), camera, lights, ubo_matrices, m_texture_depth[m_prevID], rendering_settings);
+                    }
+                    //glEndQuery(GL_ANY_SAMPLES_PASSED);
+                    //glGetQueryObjectuiv(m_occlusion_query[0], GL_QUERY_RESULT, m_occlusion_query_result, 0);
                 }
                 glBindFramebuffer(GL_FRAMEBUFFER, 0);
 

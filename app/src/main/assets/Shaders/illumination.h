@@ -1,6 +1,13 @@
 #include "shadow_mapping.h"
 #include "phong_shading.h"
-
+/*
+subroutine(color_t)
+vec4 color_white()
+{
+    return  vec4(1.0f);
+}
+*/
+//subroutine(color_t)
 vec4 compute_color()
 {
 	vec4 diffuse_tex = vec4(1.0f);
@@ -66,7 +73,7 @@ vec4 compute_color()
 	vec3	specular_color_final = uniform_light_specular_color * specular_color * specular_factor;
 	vec3	emission_color_final = emission_color;
 
-	vec3	lighting_color_final = vec3(specular_color_final)*attenuation_factor + emission_color_final;
+	vec3	lighting_color_final = vec3(ambient_color_final + diffuse_color_final + specular_color_final)*attenuation_factor + emission_color_final;
 
     return  vec4(lighting_color_final, uniform_material_diffuse_color.a);
 }

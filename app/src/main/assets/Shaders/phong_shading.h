@@ -37,11 +37,12 @@ float lightGetSpecular(const vec3 normal_wcs, const vec3 light_direction_wcs)
 	vec3	vertex_to_camera_wcs = normalize(uniform_camera_position_wcs - fs_in.position_wcs_v);
 
 #ifdef BLINN_PHONG_SHADING
-    float	specular_shininess = uniform_material_specular_color.a * 2.;
-	vec3	reflect_wcs = normalize(light_direction_wcs + vertex_to_camera_wcs);
+    float   shininess   = ( 8.0f + uniform_material_specular_color.a ) / ( 8.0f * PI );
+	vec3	halfway_wcs = normalize(-light_direction_wcs + vertex_to_camera_wcs);
+	return	pow(max(0.01f, dot(normal_wcs, halfway_wcs)), shininess);
 #else
-    float	specular_shininess = uniform_material_specular_color.a;
-	vec3	reflect_wcs	= normalize(reflect(light_direction_wcs, normal_wcs));
+    float   shininess   = ( 2.0f + uniform_material_specular_color.a ) / ( 2.0f * PI );
+	vec3	reflect_wcs	= reflect(light_direction_wcs, normal_wcs);
+	return	pow(max(0.01f, dot(vertex_to_camera_wcs, reflect_wcs)), shininess);
 #endif
-    return	pow(max(0.0f, dot(vertex_to_camera_wcs, reflect_wcs)), specular_shininess);
-}
+    }

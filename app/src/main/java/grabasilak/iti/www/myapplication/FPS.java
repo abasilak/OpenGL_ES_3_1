@@ -11,6 +11,7 @@ class FPS {
     private float      m_time;
     private long       m_end_time;
     private long       m_start_time;
+    private long       m_fence;
 
     FPS ()
     {
@@ -29,6 +30,10 @@ class FPS {
 
     void end()
     {
+//        m_fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+//        glClientWaitSync(m_fence, GL_SYNC_FLUSH_COMMANDS_BIT, GL_TIMEOUT_IGNORED);
+//        glDeleteSync(m_fence);
+
         m_end_time  = nanoTime();
         compute();
     }
