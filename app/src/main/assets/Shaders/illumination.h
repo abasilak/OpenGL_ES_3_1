@@ -58,6 +58,10 @@ vec4 compute_color()
 	float	shadow_factor		= 1.0f;
 #endif
 
+#ifdef SOFT_SHADOWS
+    if(shadow_factor < 1.0f) shadow_factor = 0.25f;
+#endif
+
 	// [FINAL FACTORS]
 	float	diffuse_factor		= diffuse_angle_factor	* spot_angle_factor * shadow_factor;
 	float	specular_factor		= specular_shininess	* shadow_factor;
