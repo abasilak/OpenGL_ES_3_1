@@ -313,7 +313,7 @@ class Mesh
         glUseProgram(0);
     }
 
-    void peel(int program, Camera camera, ArrayList<Light> lights, int UBO_Matrices, int texture_depth, RenderingSettings rendering_settings)
+    void peel(int program, Camera camera, ArrayList<Light> lights, int UBO_Matrices, int texture_depth, Viewport viewport)
     {
         float[] mw_matrix       = new float[16];
         float[] lmw_matrix      = new float[16];
@@ -354,7 +354,7 @@ class Mesh
         glUseProgram(program);
         {
             // 2. SET UNIFORMS
-            glUniform2i(glGetUniformLocation(program, "uniform_resolution"), rendering_settings.m_viewport.m_width, rendering_settings.m_viewport.m_height);
+            glUniform2i(glGetUniformLocation(program, "uniform_resolution"), viewport.m_width, viewport.m_height);
             glUniform3f(glGetUniformLocation(program, "uniform_camera_position_wcs"), camera.m_eye[0], camera.m_eye[1], camera.m_eye[2]);
 
             // 3. SET TEXTURES

@@ -225,7 +225,7 @@ class Light
             if(m_casts_shadows)
             {
                 m_camera.computeViewMatrix();
-                m_viewport.setViewport();
+                //m_viewport.setViewport();
 
                 m_shadow_mapping.draw(rendering_settings, text_manager, meshes, new ArrayList<>(Collections.singletonList(this)), camera, 0);
             }

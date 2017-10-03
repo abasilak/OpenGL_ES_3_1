@@ -7,13 +7,18 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 
 import static android.opengl.GLES20.GL_ARRAY_BUFFER;
+import static android.opengl.GLES20.GL_BACK;
+import static android.opengl.GLES20.GL_COLOR_ATTACHMENT0;
+import static android.opengl.GLES20.GL_COLOR_BUFFER_BIT;
 import static android.opengl.GLES20.GL_FLOAT;
+import static android.opengl.GLES20.GL_NEAREST;
 import static android.opengl.GLES20.GL_STATIC_DRAW;
 import static android.opengl.GLES20.GL_TEXTURE0;
 import static android.opengl.GLES20.GL_TEXTURE_2D;
 import static android.opengl.GLES20.GL_TRIANGLES;
 import static android.opengl.GLES20.glActiveTexture;
 import static android.opengl.GLES20.glBindBuffer;
+import static android.opengl.GLES20.glBindFramebuffer;
 import static android.opengl.GLES20.glBindTexture;
 import static android.opengl.GLES20.glBufferData;
 import static android.opengl.GLES20.glDrawArrays;
@@ -25,8 +30,13 @@ import static android.opengl.GLES20.glUniform1i;
 import static android.opengl.GLES20.glUniform2i;
 import static android.opengl.GLES20.glUseProgram;
 import static android.opengl.GLES20.glVertexAttribPointer;
+import static android.opengl.GLES30.GL_DRAW_FRAMEBUFFER;
+import static android.opengl.GLES30.GL_READ_FRAMEBUFFER;
 import static android.opengl.GLES30.glBindVertexArray;
+import static android.opengl.GLES30.glBlitFramebuffer;
+import static android.opengl.GLES30.glDrawBuffers;
 import static android.opengl.GLES30.glGenVertexArrays;
+import static android.opengl.GLES30.glReadBuffer;
 
 class ScreenQuad {
 
@@ -39,7 +49,6 @@ class ScreenQuad {
     private ArrayList<Shader>              m_shaders            = new ArrayList<>();
     private ArrayList<ArrayList<Float>>    m_float_ids          = new ArrayList<>();
     private ArrayList<ArrayList<String>>   m_float_strings      = new ArrayList<>();
-    private ArrayList<ArrayList<Integer>>  m_images_ids         = new ArrayList<>();
     private ArrayList<ArrayList<Integer>>  m_textures_ids       = new ArrayList<>();
     private ArrayList<ArrayList<String>>   m_textures_strings   = new ArrayList<>();
 
@@ -88,6 +97,21 @@ class ScreenQuad {
             glVertexAttribPointer(0, 2, GL_FLOAT, false, 2 * Float.BYTES, 0);
         }
         glBindVertexArray(0);
+    }
+
+    void    drawBlit(Rendering rendering_method)
+    {
+        m_viewport.setViewport();
+
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, rendering_method.getFBO());
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
+        glReadBuffer(GL_COLOR_ATTACHMENT0);
+        glDrawBuffers(1, new int[]{GL_BACK}, 0);
+
+        glBlitFramebuffer(  0, 0, rendering_method.getViewport().m_width, rendering_method.getViewport().m_height,
+                            0, 0, m_viewport.m_width, m_viewport.m_height,
+                            GL_COLOR_BUFFER_BIT, GL_NEAREST);
     }
 
     void    draw()
@@ -147,12 +171,6 @@ class ScreenQuad {
     {
         m_textures_ids.clear();
         m_textures_ids.add(tex_ids);
-    }
-
-    void	setImageList(ArrayList<Integer> tex_ids)
-    {
-        m_images_ids.clear();
-        m_images_ids.add(tex_ids);
     }
 
     void	addUniformTextures(ArrayList<String> tex_strings)

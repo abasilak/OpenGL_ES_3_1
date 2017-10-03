@@ -38,20 +38,20 @@ class ShadowMapping extends Rendering
 
     ShadowMapping(Context context, Viewport viewport)
     {
-        super("Shadow Mapping");
+        super("Shadow Mapping", viewport);
 
         m_shader_shadow_mapping = new Shader(context, context.getString(R.string.SHADER_SHADOW_MAPPING_NAME));
 
-        createFBO(viewport);
+        createFBO();
     }
 
-    boolean createFBO(Viewport viewport)
+    boolean createFBO()
     {
         // Create Shadow Texture
         glGenTextures(1, m_texture_depth, 0);
         glBindTexture(GL_TEXTURE_2D, m_texture_depth[0]);
         {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, viewport.m_width, viewport.m_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, null);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, m_viewport.m_width, m_viewport.m_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, null);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -76,6 +76,8 @@ class ShadowMapping extends Rendering
     {
         rendering_settings.m_fps.start();
         {
+            m_viewport.setViewport();
+
             glBindFramebuffer(GL_FRAMEBUFFER, m_fbo[0]);
             {
                 glDrawBuffers(1, new int[]{GL_NONE}, 0);
@@ -96,8 +98,13 @@ class ShadowMapping extends Rendering
         ));
     }
 
-    int getTextureDepth()
+    int getTextureDepth ()
     {
         return m_texture_depth[0];
     }
+    int getFBO          ()
+    {
+        return m_fbo[0];
+    }
+    Viewport getViewport() { return m_viewport;}
 }

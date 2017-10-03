@@ -52,15 +52,15 @@ class RenderingPeelingF2B extends Rendering
 
     RenderingPeelingF2B(Context context, Viewport viewport)
     {
-        super("F2B Peeling");
+        super("F2B Peeling", viewport);
 
-        m_total_passes  = 1;
+        m_total_passes  = 2;
         m_shader_peel   = new Shader(context, context.getString(R.string.SHADER_F2B_PEELING_NAME));
 
-        createFBO(viewport);
+        createFBO();
     }
 
-    boolean  createFBO(Viewport viewport)
+    boolean  createFBO()
     {
         glGenFramebuffers(2, m_fbo, 0);
         glGenTextures(2, m_texture_depth, 0);
@@ -69,7 +69,7 @@ class RenderingPeelingF2B extends Rendering
         // Texture Color
         glBindTexture(GL_TEXTURE_2D, m_texture_color[0]);
         {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, viewport.m_width, viewport.m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, null);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, m_viewport.m_width, m_viewport.m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, null);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -82,7 +82,7 @@ class RenderingPeelingF2B extends Rendering
             // Texture Depth
             glBindTexture(GL_TEXTURE_2D, m_texture_depth[i]);
             {
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, viewport.m_width, viewport.m_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, null);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, m_viewport.m_width, m_viewport.m_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, null);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -108,11 +108,12 @@ class RenderingPeelingF2B extends Rendering
     {
         rendering_settings.m_fps.start();
         {
-            rendering_settings.m_viewport.setViewport();
+            m_viewport.setViewport();
 
             glDisable(GL_CULL_FACE);
 
             m_passes = 0;
+            m_occlusion_query_result[0] = 1;
             while (m_passes < m_total_passes && m_occlusion_query_result[0] > 0)
             {
                 m_currID = m_passes % 2;
@@ -126,7 +127,7 @@ class RenderingPeelingF2B extends Rendering
                     glBeginQuery(GL_ANY_SAMPLES_PASSED, m_occlusion_query[0]);
                     {
                         for (Mesh mesh : meshes)
-                            mesh.peel(m_shader_peel.getProgram(), camera, lights, ubo_matrices, m_texture_depth[m_prevID], rendering_settings);
+                            mesh.peel(m_shader_peel.getProgram(), camera, lights, ubo_matrices, m_texture_depth[m_prevID], m_viewport);
                     }
                     glEndQuery(GL_ANY_SAMPLES_PASSED);
                     glGetQueryObjectuiv(m_occlusion_query[0], GL_QUERY_RESULT, m_occlusion_query_result, 0);
@@ -149,4 +150,9 @@ class RenderingPeelingF2B extends Rendering
     {
         return m_texture_depth[m_currID];
     }
+    int      getFBO         ()
+    {
+        return m_fbo[m_currID];
+    }
+    Viewport getViewport    () { return m_viewport;}
 }

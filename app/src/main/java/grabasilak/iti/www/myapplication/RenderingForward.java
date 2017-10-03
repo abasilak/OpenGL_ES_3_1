@@ -42,7 +42,7 @@ class RenderingForward extends Rendering
 
     RenderingForward(Context context, Viewport viewport)
     {
-        super("Forward Rendering");
+        super("Forward Rendering", viewport);
 
         m_shader_render = new Shader(context, context.getString(R.string.SHADER_FORWARD_RENDERING_NAME));
 
@@ -50,16 +50,16 @@ class RenderingForward extends Rendering
   //      phong_shading_index[0] = glGetSubroutineIndex(m_shader_render.getProgram(), GL_FRAGMENT_SHADER, "phong_shading");
     //    glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, phong_shading_index[0]);
 
-        createFBO(viewport);
+        createFBO();
     }
 
-    boolean createFBO(Viewport viewport)
+    boolean createFBO()
     {
         // Texture Depth
         glGenTextures(1, m_texture_depth, 0);
         glBindTexture(GL_TEXTURE_2D, m_texture_depth[0]);
         {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, viewport.m_width, viewport.m_height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, null);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, m_viewport.m_width, m_viewport.m_height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, null);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -71,7 +71,7 @@ class RenderingForward extends Rendering
         glGenTextures(1, m_texture_color, 0);
         glBindTexture(GL_TEXTURE_2D, m_texture_color[0]);
         {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, viewport.m_width, viewport.m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, null);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, m_viewport.m_width, m_viewport.m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, null);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -97,7 +97,7 @@ class RenderingForward extends Rendering
     {
         rendering_settings.m_fps.start();
         {
-            rendering_settings.m_viewport.setViewport();
+            m_viewport.setViewport();
 
             glBindFramebuffer(GL_FRAMEBUFFER, m_fbo[0]);
             {
@@ -121,8 +121,17 @@ class RenderingForward extends Rendering
         ));
     }
 
-    int getTextureDepth()
+    int getTextureDepth ()
     {
         return m_texture_depth[0];
+    }
+    int getFBO          ()
+    {
+        return m_fbo[0];
+    }
+
+    Viewport getViewport()
+    {
+        return m_viewport;
     }
 }

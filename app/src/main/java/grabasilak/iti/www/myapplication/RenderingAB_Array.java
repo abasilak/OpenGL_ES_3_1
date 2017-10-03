@@ -65,7 +65,7 @@ class RenderingAB_Array extends Rendering
 
     RenderingAB_Array(Context context, Viewport viewport, int max_layers)
     {
-        super("AB_ARRAY Rendering");
+        super("AB_ARRAY Rendering", viewport);
 
         m_total_passes      = 1;
         m_max_layers        = max_layers;
@@ -85,69 +85,69 @@ class RenderingAB_Array extends Rendering
             m_screen_quad_resolve.addShader          (m_shader_resolve);
         }
 
-        createFBO(viewport);
+        createFBO();
     }
 
-    boolean  createFBO(Viewport viewport)
+    boolean  createFBO()
     {
         // Texture Color
         glGenTextures(1, m_texture_color, 0);
         glBindTexture(GL_TEXTURE_2D, m_texture_color[0]);
         {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, viewport.m_width, viewport.m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, null);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, m_viewport.m_width, m_viewport.m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, null);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         }
-        //glBindTexture(GL_TEXTURE_2D, 0);
+        glBindTexture(GL_TEXTURE_2D, 0);
 
         // Texture Depth
         glGenTextures(1, m_texture_depth, 0);
         glBindTexture(GL_TEXTURE_2D, m_texture_depth[0]);
         {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, viewport.m_width, viewport.m_height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, null);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, m_viewport.m_width, m_viewport.m_height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, null);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         }
-        //glBindTexture(GL_TEXTURE_2D, 0);
+        glBindTexture(GL_TEXTURE_2D, 0);
 
         // Texture Counter
         glGenTextures(1, m_texture_counter, 0);
         glBindTexture(GL_TEXTURE_2D, m_texture_counter[0]);
         {
-            glTexStorage2D(GL_TEXTURE_2D, 1, GL_R32UI, viewport.m_width, viewport.m_height);
+            glTexStorage2D(GL_TEXTURE_2D, 1, GL_R32UI, m_viewport.m_width, m_viewport.m_height);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         }
-        //glBindTexture(GL_TEXTURE_2D, 0);
+        glBindTexture(GL_TEXTURE_2D, 0);
 
         // Texture Peel
         glGenTextures(1, m_texture_peel_depth, 0);
         glBindTexture(GL_TEXTURE_2D_ARRAY, m_texture_peel_depth[0]);
         {
-            glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_R32F, viewport.m_width, viewport.m_height, m_max_layers);
+            glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_R32F, m_viewport.m_width, m_viewport.m_height, m_max_layers);
             glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         }
-        //glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 
         glGenTextures(1, m_texture_peel_color, 0);
         glBindTexture(GL_TEXTURE_2D_ARRAY, m_texture_peel_color[0]);
         {
-            glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGBA8, viewport.m_width, viewport.m_height, m_max_layers);
+            glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGBA8, m_viewport.m_width, m_viewport.m_height, m_max_layers);
             glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         }
-        //glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 
         // Framebuffer Object
         glGenFramebuffers(1, m_fbo, 0);
@@ -168,7 +168,7 @@ class RenderingAB_Array extends Rendering
     {
         rendering_settings.m_fps.start();
         {
-            rendering_settings.m_viewport.setViewport();
+            m_viewport.setViewport();
             glBindFramebuffer(GL_FRAMEBUFFER, m_fbo[0]);
             {
                 glBindImageTexture(0, m_texture_counter     [0], 0, false, 0, GL_READ_WRITE, GL_R32UI);
@@ -222,4 +222,9 @@ class RenderingAB_Array extends Rendering
     {
         return m_texture_peel_depth[0];
     }
+    int      getFBO         ()
+    {
+        return m_fbo[0];
+    }
+    Viewport getViewport    () { return m_viewport;}
 }

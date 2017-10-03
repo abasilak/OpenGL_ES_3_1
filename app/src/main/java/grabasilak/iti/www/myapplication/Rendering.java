@@ -13,16 +13,21 @@ abstract class Rendering
     int []    m_occlusion_query = new int[1];
     int []    m_occlusion_query_result = new int[1];
 
-    Rendering(String name)
+    Viewport  m_viewport;
+
+    Rendering(String name, Viewport viewport)
     {
         m_name          = name;
+        m_viewport      = viewport;
         m_total_passes  = 1;
 
         glGenQueries(1, m_occlusion_query, 0);
-        m_occlusion_query_result[0] = 1;
     }
 
-    abstract boolean     createFBO(Viewport viewport);
+    abstract boolean     createFBO();
     abstract void        draw     (RenderingSettings rendering_settings, TextManager text_manager, ArrayList<Mesh> meshes, ArrayList<Light> lights, Camera camera, int ubo_matrices);
+
+    abstract int         getFBO();
+    abstract Viewport    getViewport();
     abstract int         getTextureDepth();
 }
