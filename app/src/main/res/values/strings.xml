@@ -16,6 +16,12 @@
     <string name="SHADER_AB_LL_PEEL_NAME" translatable="false">Rendering/MFR/ABuffer/LL/ab_ll_peel</string>
     <string name="SHADER_AB_LL_RESOLVE_NAME" translatable="false">Rendering/MFR/ABuffer/LL/ab_ll_resolve</string>
 
+    <string name="SHADER_AB_SB_INIT_NAME" translatable="false">Rendering/MFR/ABuffer/SB/ab_sb_init</string>
+    <string name="SHADER_AB_SB_BLEND_NAME" translatable="false">Rendering/MFR/ABuffer/SB/ab_sb_blend</string>
+    <string name="SHADER_AB_SB_HEAD_NAME" translatable="false">Rendering/MFR/ABuffer/SB/ab_sb_head</string>
+    <string name="SHADER_AB_SB_PEEL_NAME" translatable="false">Rendering/MFR/ABuffer/SB/ab_sb_peel</string>
+    <string name="SHADER_AB_SB_RESOLVE_NAME" translatable="false">Rendering/MFR/ABuffer/SB/ab_sb_resolve</string>
+
     <string name="SHADER_SHADOW_MAPPING_NAME" translatable="false">Rendering/ShadowMapping/shadow_mapping</string>
     <string name="SHADER_TEXT_RENDERING_NAME" translatable="false">Rendering/text_rendering</string>
 

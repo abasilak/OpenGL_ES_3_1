@@ -50,6 +50,7 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
     private RenderingPeelingF2B m_peeling_f2b;
     private RenderingAB_Array   m_multifragment_ab_array;
     private RenderingAB_LL      m_multifragment_ab_ll;
+    private RenderingAB_SB      m_multifragment_ab_sb;
 
     private Shader              m_shader_color_render;
     private Shader              m_shader_depth_render;
@@ -84,13 +85,15 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         m_rendering_forward   = new RenderingForward(m_context, m_rendering_settings.m_viewport);
         //m_peeling_f2b         = new RenderingPeelingF2B(m_context, m_rendering_settings.m_viewport);
         //m_multifragment_ab_array   = new RenderingAB_Array(m_context, m_rendering_settings.m_viewport, m_rendering_settings.m_max_layers);
-        m_multifragment_ab_ll = new RenderingAB_LL(m_context, m_rendering_settings.m_viewport, m_rendering_settings.m_max_layers);
+        //m_multifragment_ab_ll = new RenderingAB_LL(m_context, m_rendering_settings.m_viewport, m_rendering_settings.m_max_layers);
+        m_multifragment_ab_sb = new RenderingAB_SB(m_context, m_rendering_settings.m_viewport);
 
         m_rendering_methods.add(m_rendering_forward);
         //m_rendering_methods.add(m_peeling_f2b);
         //m_rendering_methods.add(m_multifragment_ab_array);
-        m_rendering_methods.add(m_multifragment_ab_ll);
-        m_current_rendering_method = 0;
+        //m_rendering_methods.add(m_multifragment_ab_ll);
+        m_rendering_methods.add(m_multifragment_ab_sb);
+        m_current_rendering_method = 1;
 
         m_shader_color_render = new Shader(m_context, m_context.getString(R.string.SHADER_TEXTURE_COLOR_RENDERING_NAME));
         m_shader_depth_render = new Shader(m_context, m_context.getString(R.string.SHADER_TEXTURE_DEPTH_RENDERING_NAME));

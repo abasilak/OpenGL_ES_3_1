@@ -162,11 +162,13 @@ class Mesh
 
     void drawSimple(int program, Camera camera)
     {
+        float[]  mw_matrix  = new float[16];
         float[] vmw_matrix  = new float[16];
         float[] pvmw_matrix = new float[16];
 
-        Matrix.multiplyMM(vmw_matrix , 0, camera.m_view_matrix       , 0, m_model_matrix  , 0 );
-        Matrix.multiplyMM(pvmw_matrix, 0, camera.m_projection_matrix , 0, vmw_matrix      , 0 );
+        Matrix.multiplyMM(mw_matrix  , 0, camera.m_world_matrix      , 0, m_model_matrix, 0 );
+        Matrix.multiplyMM(vmw_matrix , 0, camera.m_view_matrix       , 0, mw_matrix  , 0 );
+        Matrix.multiplyMM(pvmw_matrix, 0, camera.m_projection_matrix , 0, vmw_matrix , 0 );
 
         // Add program to OpenGL environment
         glUseProgram(program);
@@ -176,9 +178,12 @@ class Mesh
             glUniform3f(glGetUniformLocation(program, "uniform_color"), m_mtl_materials.get(0).m_diffuse[0], m_mtl_materials.get(0).m_diffuse[1], m_mtl_materials.get(0).m_diffuse[2]);
 
             // 3. DRAW
+            int end;
             glBindVertexArray ( m_vao[0] );
+            for (int i = 0, start = 0; i < m_primitive_groups.size(); i++, start += end)
             {
-                glDrawRangeElements(GL_TRIANGLES, 0, m_indices_data.length, m_indices_data.length, GL_UNSIGNED_INT, 0);
+                end = m_primitive_groups.get(i).m_primitives.size()*3;
+                glDrawRangeElements(GL_TRIANGLES, start, start + end, end, GL_UNSIGNED_INT, start*Integer.BYTES);
             }
             glBindVertexArray ( 0 );
         }
