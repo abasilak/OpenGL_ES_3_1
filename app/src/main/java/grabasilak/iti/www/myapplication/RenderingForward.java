@@ -129,7 +129,6 @@ class RenderingForward extends Rendering
     {
         return m_fbo[0];
     }
-
     Viewport getViewport()
     {
         return m_viewport;

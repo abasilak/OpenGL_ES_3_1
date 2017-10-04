@@ -25,7 +25,7 @@ class Light
 
     private boolean	    m_is_rendered;
     private boolean	    m_is_animated;
-    public  boolean	    m_is_spotlight;
+            boolean	    m_is_spotlight;
     private boolean	    m_casts_shadows;
     private float	    m_spotlight_cutoff;
 

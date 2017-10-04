@@ -1,9 +1,9 @@
-#include "version.h"
+#include "Include/version.h"
 
 precision highp float;
 
-#include "heatmap.h"
-#include "sort.h"
+#include "Include/heatmap.h"
+#include "Include/sort.h"
 
 layout(binding = 0, r32ui) uniform highp   readonly uimage2D      uniform_image_counter;
 layout(binding = 1, r32f ) uniform highp   readonly  image2DArray uniform_image_peel_depth;

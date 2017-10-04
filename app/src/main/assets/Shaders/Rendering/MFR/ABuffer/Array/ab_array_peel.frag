@@ -1,12 +1,11 @@
-#include "version.h"
+#include "Include/version.h"
 #extension GL_OES_shader_image_atomic  : enable
 
 precision highp float;
 
-#include "inout.h"
-#include "uniforms.h"
-#include "illumination.h"
-
+#include "Include/inout_frag.h"
+#include "Include/uniforms.h"
+#include "Include/illumination.h"
 
 layout(binding = 0, r32ui) uniform highp    coherent  uimage2D     uniform_image_counter;
 layout(binding = 1, r32f ) uniform highp    writeonly image2DArray uniform_image_peel_depth;

@@ -1,12 +1,12 @@
-#include "version.h"
+#include "Include/version.h"
 
 precision highp int;
 precision highp uint;
 precision highp float;
 
-#include "heatmap.h"
-#include "sort.h"
-#include "data_structs.h"
+#include "Include/heatmap.h"
+#include "Include/sort.h"
+#include "Include/data_structs.h"
 
 layout(binding = 0, r32ui) uniform highp   readonly uimage2D      uniform_image_head;
 layout(binding = 4, std430)        highp   readonly buffer LinkedLists { NodeTypeLL nodes[]; };

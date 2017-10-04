@@ -1,5 +1,5 @@
-#include "shadow_mapping.h"
-#include "phong_shading.h"
+#include "Include/shadow_mapping.h"
+#include "Include/phong_shading.h"
 /*
 subroutine(color_t)
 vec4 color_white()
@@ -56,10 +56,6 @@ vec4 compute_color()
 	float	shadow_factor		= (cast_shadows == 1.0f) ? ((diffuse_angle_factor > 0.0f) ? lightGetShadow(diffuse_angle_factor) : 0.0f) : 1.0f;
 #else
 	float	shadow_factor		= 1.0f;
-#endif
-
-#ifdef SOFT_SHADOWS
-    if(shadow_factor < 1.0f) shadow_factor = 0.25f;
 #endif
 
 	// [FINAL FACTORS]

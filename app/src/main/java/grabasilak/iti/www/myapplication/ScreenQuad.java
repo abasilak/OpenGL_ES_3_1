@@ -64,14 +64,14 @@ class ScreenQuad {
     {
 	    final float m_vertices_data[] = // Vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
         {
-            // Positions
-            -1.0f, 1.0f,
+            // Positions of one BIG Triangle
+            -1.0f, 6.0f,
             -1.0f, -1.0f,
-            1.0f, -1.0f,
+            6.0f, -1.0f,
 
-            -1.0f, 1.0f,
-            1.0f, -1.0f,
-            1.0f, 1.0f
+            //-1.0f, 1.0f,
+            //1.0f, -1.0f,
+            //1.0f, 1.0f
         };
 
         FloatBuffer m_vertices_buffer;
@@ -141,7 +141,7 @@ class ScreenQuad {
 
             glBindVertexArray(m_vao[0]);
             {
-                glDrawArrays(GL_TRIANGLES, 0, 6);
+                glDrawArrays(GL_TRIANGLES, 0, 3);
             }
             glBindVertexArray(0);
 

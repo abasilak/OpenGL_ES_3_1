@@ -54,7 +54,7 @@ class RenderingPeelingF2B extends Rendering
     {
         super("F2B Peeling", viewport);
 
-        m_total_passes  = 2;
+        m_total_passes  = 1;
         m_shader_peel   = new Shader(context, context.getString(R.string.SHADER_F2B_PEELING_NAME));
 
         createFBO();

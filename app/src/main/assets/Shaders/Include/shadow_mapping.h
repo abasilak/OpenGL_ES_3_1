@@ -2,8 +2,7 @@
 #define SHADOW_NUM_SAMPLES_EARLY	4
 #define SHADOW_NUM_SAMPLES			16
 #define SHADOW_DEPTH_BIAS			0.0075f
-#define SHADOW_CONSTANT_BIAS
-#define SOFT_SHADOWS
+//#define SHADOW_CONSTANT_BIAS
 
 #define SHADOW_PCF
 #define SHADOW_POISSON_SAMPLING
@@ -117,7 +116,7 @@ float lightGetShadow(const float diffuse_angle_factor)
 		float	bias = SHADOW_DEPTH_BIAS;
 #else
 		float	bias = SHADOW_DEPTH_BIAS*tan(acos(diffuse_angle_factor));
-				bias = clamp(bias, 0, 0.001f);
+				bias = clamp(bias, 0.0f, SHADOW_DEPTH_BIAS);
 #endif
 
 #ifdef SHADOW_PCF
