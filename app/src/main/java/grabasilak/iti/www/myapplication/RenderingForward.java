@@ -11,6 +11,7 @@ import static android.opengl.GLES20.GL_DEPTH_ATTACHMENT;
 import static android.opengl.GLES20.GL_DEPTH_BUFFER_BIT;
 import static android.opengl.GLES20.GL_DEPTH_COMPONENT;
 import static android.opengl.GLES20.GL_DEPTH_COMPONENT16;
+import static android.opengl.GLES20.GL_FLOAT;
 import static android.opengl.GLES20.GL_FRAMEBUFFER;
 import static android.opengl.GLES20.GL_NEAREST;
 import static android.opengl.GLES20.GL_RGBA;
@@ -19,7 +20,6 @@ import static android.opengl.GLES20.GL_TEXTURE_MAG_FILTER;
 import static android.opengl.GLES20.GL_TEXTURE_MIN_FILTER;
 import static android.opengl.GLES20.GL_TEXTURE_WRAP_S;
 import static android.opengl.GLES20.GL_TEXTURE_WRAP_T;
-import static android.opengl.GLES20.GL_UNSIGNED_BYTE;
 import static android.opengl.GLES20.GL_UNSIGNED_INT;
 import static android.opengl.GLES20.glBindFramebuffer;
 import static android.opengl.GLES20.glBindTexture;
@@ -29,7 +29,7 @@ import static android.opengl.GLES20.glGenFramebuffers;
 import static android.opengl.GLES20.glGenTextures;
 import static android.opengl.GLES20.glTexImage2D;
 import static android.opengl.GLES20.glTexParameteri;
-import static android.opengl.GLES30.GL_SRGB8_ALPHA8;
+import static android.opengl.GLES30.GL_RGBA16F;
 import static android.opengl.GLES30.glDrawBuffers;
 import static android.opengl.GLES30.glInvalidateFramebuffer;
 
@@ -71,7 +71,8 @@ class RenderingForward extends Rendering
         glGenTextures(1, m_texture_color, 0);
         glBindTexture(GL_TEXTURE_2D, m_texture_color[0]);
         {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, m_viewport.m_width, m_viewport.m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, null);
+            //glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8    , m_viewport.m_width, m_viewport.m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, null);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F           ,  m_viewport.m_width, m_viewport.m_height, 0, GL_RGBA, GL_FLOAT, null);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);

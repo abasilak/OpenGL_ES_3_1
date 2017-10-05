@@ -103,10 +103,10 @@ float is_point_in_shadow_pcf(vec4 position, float bias)
 }
 #endif
 
-float lightGetShadow(const float diffuse_angle_factor)
+float lightGetShadow(const float diffuse_angle_factor, const vec4 position_lcs_v)
 {
 	float	shadow_factor		= 0.0f;
-	vec4	position_lcs		= fs_in.position_lcs_v / fs_in.position_lcs_v.w;
+	vec4	position_lcs		= position_lcs_v / position_lcs_v.w;
 			position_lcs.xyz	= (position_lcs.xyz + vec3(1)) * vec3(0.5f);
 
 	// Light Frustum Culling

@@ -182,7 +182,7 @@ class RenderingAB_LL extends Rendering
         return true;
     }
 
-    void     initSharedPool()
+    private void     initSharedPool()
     {
         m_struct_size = (2*Float.BYTES + 2*Integer.BYTES);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_ssbo_peel[0]);

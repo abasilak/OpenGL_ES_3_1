@@ -62,7 +62,8 @@ import static android.opengl.GLES31.glMemoryBarrier;
 
 class RenderingAB_SB extends Rendering
 {
-    private int     m_total_fragments;
+    private int    m_total_fragments;
+    private int    m_generated_fragments;
 
     private Shader m_shader_init;
     private Shader m_shader_blend;
@@ -73,6 +74,8 @@ class RenderingAB_SB extends Rendering
     private ScreenQuad m_screen_quad_init;
     private ScreenQuad m_screen_quad_head;
     private ScreenQuad m_screen_quad_resolve;
+
+    private boolean m_realloc_memory_enabled;
 
     private int [] m_fbo                = new int[1];
     private int [] m_texture_depth      = new int[1];
@@ -89,6 +92,7 @@ class RenderingAB_SB extends Rendering
 
         m_total_passes      = 2;
         m_struct_size       = (2*Float.BYTES + 2*Integer.BYTES);
+        m_total_fragments   = 500000;
 
         m_shader_init       = new Shader(context, context.getString(R.string.SHADER_AB_SB_INIT_NAME));
         m_shader_blend      = new Shader(context, context.getString(R.string.SHADER_AB_SB_BLEND_NAME));
@@ -115,6 +119,7 @@ class RenderingAB_SB extends Rendering
         }
 
         m_atomic_counter_data[0] = 0;
+        m_realloc_memory_enabled = false;
 
         createFBO();
     }
@@ -188,13 +193,15 @@ class RenderingAB_SB extends Rendering
         }
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+        initSharedPool();
+
         RenderingSettings.checkFramebufferStatus();
         RenderingSettings.checkGlError(m_name + " - [createFBO]");
 
         return true;
     }
 
-    void     initSharedPool()
+    private void     initSharedPool()
     {
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_ssbo_peel[0]);
         {
@@ -220,58 +227,70 @@ class RenderingAB_SB extends Rendering
                 glDisable(GL_DEPTH_TEST);
                 glDepthMask(false);
 
-                // 0.a INIT Atomic Counter
+                while(true)
                 {
-                    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_ssbo_frag_counter[0]);
+                    // 0.a INIT Atomic Counter
                     {
-                        IntBuffer mappedBuffer = ((ByteBuffer) glMapBufferRange(
-                                GL_SHADER_STORAGE_BUFFER, 0, Integer.BYTES,
-                                GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT)).order(ByteOrder.nativeOrder()).asIntBuffer();
-                        mappedBuffer.put(m_atomic_counter_data).position(0);
-                        glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+                        glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_ssbo_frag_counter[0]);
+                        {
+                            IntBuffer mappedBuffer = ((ByteBuffer) glMapBufferRange(
+                                    GL_SHADER_STORAGE_BUFFER, 0, Integer.BYTES,
+                                    GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT)).order(ByteOrder.nativeOrder()).asIntBuffer();
+                            mappedBuffer.put(m_atomic_counter_data).position(0);
+                            glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+                        }
+                        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
                     }
-                    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-                }
-                glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+                    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
-                // 0.b INIT Counter & Head
-                {
-                    m_screen_quad_init.draw();
-                }
-                glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-                // 1.a BLEND
-                {
-                    // glBeginQuery(GL_SAMPLES_PASSED, m_occlusion_query[0]);
-                    for (Mesh mesh : meshes)
-                        mesh.drawSimple(m_shader_blend.getProgram(), camera);
-                    //glEndQuery(GL_SAMPLES_PASSED);
-                }
-                glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
-
-                // 1.c Compute Head
-                {
-                    m_screen_quad_head.draw();
-                }
-                glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
-
-                // 1.b COMPUTE TOTAL FRAGMENTS
-                {
-                    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_ssbo_frag_counter[0]);
+                    // 0.b INIT Counter & Head
                     {
-                        IntBuffer mappedBuffer = ((ByteBuffer) glMapBufferRange(
-                                GL_SHADER_STORAGE_BUFFER, 0, Integer.BYTES,
-                                GL_MAP_READ_BIT)).order(ByteOrder.nativeOrder()).asIntBuffer();
-
-                        m_total_fragments = mappedBuffer.get();
-                        glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+                        m_screen_quad_init.draw();
                     }
-                    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+                    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-                    //glGetQueryObjectiv(m_occlusion_query[0], GL_QUERY_RESULT, m_occlusion_query_result,0);
-                    //m_total_fragments = m_occlusion_query_result[0];
+                    // 1.a BLEND
+                    {
+                        // glBeginQuery(GL_SAMPLES_PASSED, m_occlusion_query[0]);
+                        for (Mesh mesh : meshes)
+                            mesh.drawSimple(m_shader_blend.getProgram(), camera);
+                        //glEndQuery(GL_SAMPLES_PASSED);
+                    }
+                    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
 
-                    initSharedPool();
+                    // 1.c Compute Head
+                    {
+                        m_screen_quad_head.draw();
+                    }
+                    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
+
+                    // 1.b COMPUTE TOTAL FRAGMENTS
+                    if (m_realloc_memory_enabled)
+                    {
+                        glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_ssbo_frag_counter[0]);
+                        {
+                            IntBuffer mappedBuffer = ((ByteBuffer) glMapBufferRange(
+                                    GL_SHADER_STORAGE_BUFFER, 0, Integer.BYTES,
+                                    GL_MAP_READ_BIT)).order(ByteOrder.nativeOrder()).asIntBuffer();
+
+                            m_generated_fragments = mappedBuffer.get();
+                            glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+                        }
+                        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+                        //glGetQueryObjectiv(m_occlusion_query[0], GL_QUERY_RESULT, m_occlusion_query_result,0);
+                        //m_total_fragments = m_occlusion_query_result[0];
+
+                        if (m_generated_fragments > m_total_fragments)
+                        {
+                            m_total_fragments = m_generated_fragments;
+                            initSharedPool();
+                        }
+                        else
+                            break;
+                    }
+                    else
+                        break;
                 }
 
                 // 2.a PEEL

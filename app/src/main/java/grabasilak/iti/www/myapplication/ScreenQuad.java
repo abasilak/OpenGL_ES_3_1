@@ -26,7 +26,6 @@ import static android.opengl.GLES20.glEnableVertexAttribArray;
 import static android.opengl.GLES20.glGenBuffers;
 import static android.opengl.GLES20.glGetUniformLocation;
 import static android.opengl.GLES20.glUniform1f;
-import static android.opengl.GLES20.glUniform1i;
 import static android.opengl.GLES20.glUniform2i;
 import static android.opengl.GLES20.glUseProgram;
 import static android.opengl.GLES20.glVertexAttribPointer;
@@ -50,7 +49,6 @@ class ScreenQuad {
     private ArrayList<ArrayList<Float>>    m_float_ids          = new ArrayList<>();
     private ArrayList<ArrayList<String>>   m_float_strings      = new ArrayList<>();
     private ArrayList<ArrayList<Integer>>  m_textures_ids       = new ArrayList<>();
-    private ArrayList<ArrayList<String>>   m_textures_strings   = new ArrayList<>();
 
     ScreenQuad(int window_percentage)
     {
@@ -120,16 +118,16 @@ class ScreenQuad {
 
         glUseProgram(m_shaders.get(m_id).getProgram());
         {
-            if(!m_textures_ids.isEmpty())
-            for (int i = 0; i < m_textures_ids.get(m_id).size(); i++)
-                glUniform1i(glGetUniformLocation(m_shaders.get(m_id).getProgram(), m_textures_strings.get(m_id).get(i)), i);
+//            if(!m_textures_ids.isEmpty())
+  //          for (int i = 0; i < m_textures_ids.get(m_id).size(); i++)
+    //            glUniform1i(glGetUniformLocation(m_shaders.get(m_id).getProgram(), m_textures_strings.get(m_id).get(i)), i);
 
             if(!m_float_ids.isEmpty())
             for (int i = 0; i < m_float_ids.get(m_id).size(); i++)
                 glUniform1f(glGetUniformLocation(m_shaders.get(m_id).getProgram(), m_float_strings.get(m_id).get(i)), m_float_ids.get(m_id).get(i));
 
             glUniform2i(glGetUniformLocation(m_shaders.get(m_id).getProgram(), "uniform_viewport_resolution"), m_viewport.m_width, m_viewport.m_height);
-            glUniform1i(glGetUniformLocation(m_shaders.get(m_id).getProgram(), "uniform_window_percentage"), m_window_percentage);
+            //glUniform1i(glGetUniformLocation(m_shaders.get(m_id).getProgram(), "uniform_window_percentage"), m_window_percentage);
             glUniform2i(glGetUniformLocation(m_shaders.get(m_id).getProgram(), "uniform_viewport_left_corner"), m_viewport.m_left_corner_x, m_viewport.m_left_corner_y);
 
             if(!m_textures_ids.isEmpty())
@@ -171,11 +169,6 @@ class ScreenQuad {
     {
         m_textures_ids.clear();
         m_textures_ids.add(tex_ids);
-    }
-
-    void	addUniformTextures(ArrayList<String> tex_strings)
-    {
-        m_textures_strings.add(tex_strings);
     }
 
     void    addUniformFloats(ArrayList<Float> float_ids, ArrayList<String> float_strings)

@@ -152,7 +152,7 @@ class RenderingPeelingF2B extends Rendering
     }
     int      getFBO         ()
     {
-        return m_fbo[m_currID];
+        return m_fbo[0];
     }
     Viewport getViewport    () { return m_viewport;}
 }

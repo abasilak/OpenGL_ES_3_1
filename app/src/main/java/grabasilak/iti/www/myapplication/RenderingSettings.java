@@ -18,6 +18,8 @@ class RenderingSettings {
     FPS             m_fps;
     Viewport        m_viewport;
     final float     m_depth;
+    final float     m_exposure;
+    final float     m_gamma;
     final float []  m_background_color;
     final int       m_max_layers;
     final int       m_max_memory;
@@ -29,6 +31,8 @@ class RenderingSettings {
         m_viewport              = new Viewport(0,0, width, height);
 
         m_depth                 = 1.0f;
+        m_exposure              = 1.0f;
+        m_gamma                 = 2.2f;
 
         m_background_color      = new float [4];
         m_background_color[0]   = 1.0f;
