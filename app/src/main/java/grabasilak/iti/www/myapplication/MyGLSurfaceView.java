@@ -27,8 +27,9 @@ class MyGLSurfaceView extends GLSurfaceView
 
     public void init(Context context, int width, int height)
     {
-        // Create an OpenGL ES 3.0 context
+        // Create an OpenGL ES 3.0 context and RGBA8888_D16_S0
         setEGLContextClientVersion(3);
+        setEGLConfigChooser(8, 8, 8, 8, 16, 0);
 
         m_renderer = new MyGLRenderer(context, width, height);
 

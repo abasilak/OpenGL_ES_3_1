@@ -34,8 +34,8 @@ void main()
 	// retrieve data from gbuffer
 	uvec3	colors		        = texture(uniform_textures_colors, coords).rgb;
 	vec4    diffuse_color       = unpackUnorm4x8(colors.r);
-	if(diffuse_color.a == 0.f)
-	    discard;
+	//if(diffuse_color.a == 0.f)
+	  //  discard;
 
 	vec4	specular_color		= unpackUnorm4x8(colors.g);
 	vec3	emission_color		= unpackUnorm4x8(colors.b).rgb;
