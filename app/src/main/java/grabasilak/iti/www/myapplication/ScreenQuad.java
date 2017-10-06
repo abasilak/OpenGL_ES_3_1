@@ -27,6 +27,7 @@ import static android.opengl.GLES20.glGenBuffers;
 import static android.opengl.GLES20.glGetUniformLocation;
 import static android.opengl.GLES20.glUniform1f;
 import static android.opengl.GLES20.glUniform2i;
+import static android.opengl.GLES20.glUniform3f;
 import static android.opengl.GLES20.glUseProgram;
 import static android.opengl.GLES20.glVertexAttribPointer;
 import static android.opengl.GLES30.GL_DRAW_FRAMEBUFFER;
@@ -46,7 +47,7 @@ class ScreenQuad {
     private int			  m_id;
 
     private ArrayList<Shader>              m_shaders            = new ArrayList<>();
-    private ArrayList<ArrayList<Float>>    m_float_ids          = new ArrayList<>();
+    private ArrayList<ArrayList<float []>> m_float_ids          = new ArrayList<>();
     private ArrayList<ArrayList<String>>   m_float_strings      = new ArrayList<>();
     private ArrayList<ArrayList<Integer>>  m_textures_ids       = new ArrayList<>();
 
@@ -107,8 +108,8 @@ class ScreenQuad {
         glReadBuffer(GL_COLOR_ATTACHMENT0);
         glDrawBuffers(1, new int[]{GL_BACK}, 0);
 
-        glBlitFramebuffer(  0, 0, rendering_method.getViewport().m_width, rendering_method.getViewport().m_height,
-                            0, 0, m_viewport.m_width, m_viewport.m_height,
+        glBlitFramebuffer(  0                         ,                          0, rendering_method.getViewport().m_width , rendering_method.getViewport().m_height,
+                            m_viewport.m_left_corner_x, m_viewport.m_left_corner_y, m_viewport.m_width, m_viewport.m_height,
                             GL_COLOR_BUFFER_BIT, GL_NEAREST);
     }
 
@@ -118,16 +119,18 @@ class ScreenQuad {
 
         glUseProgram(m_shaders.get(m_id).getProgram());
         {
-//            if(!m_textures_ids.isEmpty())
-  //          for (int i = 0; i < m_textures_ids.get(m_id).size(); i++)
-    //            glUniform1i(glGetUniformLocation(m_shaders.get(m_id).getProgram(), m_textures_strings.get(m_id).get(i)), i);
-
             if(!m_float_ids.isEmpty())
             for (int i = 0; i < m_float_ids.get(m_id).size(); i++)
-                glUniform1f(glGetUniformLocation(m_shaders.get(m_id).getProgram(), m_float_strings.get(m_id).get(i)), m_float_ids.get(m_id).get(i));
+            {
+                if (m_float_ids.get(m_id).get(i).length == 1)
+                    glUniform1f(glGetUniformLocation(m_shaders.get(m_id).getProgram(), m_float_strings.get(m_id).get(i)), m_float_ids.get(m_id).get(i)[0]);
+                if (m_float_ids.get(m_id).get(i).length == 3)
+                    glUniform3f(glGetUniformLocation(m_shaders.get(m_id).getProgram(), m_float_strings.get(m_id).get(i)), m_float_ids.get(m_id).get(i)[0]
+                            , m_float_ids.get(m_id).get(i)[1]
+                            , m_float_ids.get(m_id).get(i)[2]);
+            }
 
             glUniform2i(glGetUniformLocation(m_shaders.get(m_id).getProgram(), "uniform_viewport_resolution"), m_viewport.m_width, m_viewport.m_height);
-            //glUniform1i(glGetUniformLocation(m_shaders.get(m_id).getProgram(), "uniform_window_percentage"), m_window_percentage);
             glUniform2i(glGetUniformLocation(m_shaders.get(m_id).getProgram(), "uniform_viewport_left_corner"), m_viewport.m_left_corner_x, m_viewport.m_left_corner_y);
 
             if(!m_textures_ids.isEmpty())
@@ -171,7 +174,7 @@ class ScreenQuad {
         m_textures_ids.add(tex_ids);
     }
 
-    void    addUniformFloats(ArrayList<Float> float_ids, ArrayList<String> float_strings)
+    void addUniform(ArrayList<float []> float_ids, ArrayList<String> float_strings)
     {
         m_float_ids.add(float_ids);
         m_float_strings.add(float_strings);

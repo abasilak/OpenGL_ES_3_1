@@ -29,5 +29,6 @@
 
     <string name="SHADER_TEXTURE_COLOR_RENDERING_NAME" translatable="false">PostProcessing/texture_color_rendering</string>
     <string name="SHADER_TEXTURE_COLOR_HDR_NAME" translatable="false">PostProcessing/texture_color_HDR_rendering</string>
+    <string name="SHADER_TEXTURE_NORMAL_RENDERING_NAME" translatable="false">PostProcessing/texture_normal_rendering</string>
     <string name="SHADER_TEXTURE_DEPTH_RENDERING_NAME" translatable="false">PostProcessing/texture_depth_rendering</string>
 </resources>
