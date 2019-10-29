@@ -86,19 +86,19 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
         addMesh(m_context.getString(R.string.MESH_NAME), true);
 
         m_rendering_forward   = new RenderingForward (m_context, m_rendering_settings.m_viewport);
-        m_rendering_deferred  = new RenderingDeferred(m_context, m_rendering_settings.m_viewport, m_lights, m_camera);
+        //m_rendering_deferred  = new RenderingDeferred(m_context, m_rendering_settings.m_viewport, m_lights, m_camera);
         //m_peeling_f2b         = new RenderingPeelingF2B(m_context, m_rendering_settings.m_viewport);
         //m_multifragment_ab_array   = new RenderingAB_Array(m_context, m_rendering_settings.m_viewport, m_rendering_settings.m_max_layers);
         //m_multifragment_ab_ll = new RenderingAB_LL(m_context, m_rendering_settings.m_viewport, m_rendering_settings.m_max_layers);
         //m_multifragment_ab_sb = new RenderingAB_SB(m_context, m_rendering_settings.m_viewport);
 
         m_rendering_methods.add(m_rendering_forward);
-        m_rendering_methods.add(m_rendering_deferred);
+        //m_rendering_methods.add(m_rendering_deferred);
         //m_rendering_methods.add(m_peeling_f2b);
         //m_rendering_methods.add(m_multifragment_ab_array);
         //m_rendering_methods.add(m_multifragment_ab_ll);
         //m_rendering_methods.add(m_multifragment_ab_sb);
-        m_current_rendering_method = 1;
+        m_current_rendering_method = 0;
 
         m_shader_color_render     = new Shader(m_context, m_context.getString(R.string.SHADER_TEXTURE_COLOR_RENDERING_NAME));
         m_shader_color_HDR_render = new Shader(m_context, m_context.getString(R.string.SHADER_TEXTURE_COLOR_HDR_NAME));
@@ -110,7 +110,7 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
             m_screen_quad_output.setViewport        (m_rendering_settings.m_viewport.m_width, m_rendering_settings.m_viewport.m_height);
             m_screen_quad_output.addShader          (m_shader_color_render);
 
-            ArrayList uniforms_output = new ArrayList< float[] >();
+            ArrayList< float[] > uniforms_output = new ArrayList<>();
             uniforms_output.add(new float[] {m_rendering_settings.m_exposure});
             uniforms_output.add(new float[] {m_rendering_settings.m_gamma});
             m_screen_quad_output.addUniform( uniforms_output, new ArrayList<>(Arrays.asList("uniform_exposure", "uniform_gamma")));
@@ -120,7 +120,7 @@ class MyGLRenderer implements GLSurfaceView.Renderer {
             m_screen_quad_debug.setViewport         (m_rendering_settings.m_viewport.m_width, m_rendering_settings.m_viewport.m_height);
             m_screen_quad_debug.addShader           (m_shader_depth_render);
 
-            ArrayList uniforms_debug = new ArrayList< float[] >();
+            ArrayList< float[] > uniforms_debug = new ArrayList<>();
             uniforms_debug.add(new float[] {m_camera.m_near_field});
             uniforms_debug.add(new float[] {m_camera.m_far_field});
             m_screen_quad_debug.addUniform( uniforms_debug, new ArrayList<>(Arrays.asList("uniform_z_near", "uniform_z_far")));

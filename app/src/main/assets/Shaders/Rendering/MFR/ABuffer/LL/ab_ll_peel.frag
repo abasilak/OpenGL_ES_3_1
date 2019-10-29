@@ -55,7 +55,6 @@ void main()
             nodes[page_id].color = packUnorm4x8(color_final);
             nodes[page_id].depth = gl_FragCoord.z;
             nodes[page_id].next  = prev_id;
-            discard;
         }
     }
 }

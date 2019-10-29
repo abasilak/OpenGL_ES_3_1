@@ -1,5 +1,4 @@
 #include "Include/version.h"
-
 precision highp float;
 
 #include "Include/inout_frag.h"
